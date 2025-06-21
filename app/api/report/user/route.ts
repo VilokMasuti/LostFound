@@ -1,57 +1,34 @@
-import connectDB from '@/lib/mongodb';
-import Reports from '@/models/Reports';
-import type { Types } from 'mongoose';
-import { NextResponse } from 'next/server';
-
-// Define interface for populated report
-interface PopulatedReport {
-  _id: Types.ObjectId;
-  userId: {
-    _id: Types.ObjectId;
-    name: string;
-    email: string;
-  };
-  type: string;
-  brand: string;
-  color: string;
-  location: string;
-  description: string;
-  dateLostFound: Date;
-  contactEmail?: string;
-  contactPhone?: string;
-  imageUrl?: string;
-  status: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { NextResponse } from "next/server"
+import connectDB from "@/lib/mongodb"
+import Report from "@/models/Report"
+import { getAuthUser } from "@/lib/auth"
 
 export async function GET() {
   try {
-    await connectDB();
+    console.log("👤 GET /api/reports/user - Fetching user reports")
 
-    const reports = (await Reports.find({ status: 'active' })
-      .populate('userId', 'name email')
-      .sort({ createdAt: -1 })
-      .lean()) as unknown as PopulatedReport[];
+    const userId = await getAuthUser()
+    if (!userId) {
+      console.log("❌ No authentication found")
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
 
-    // Transform the data to match frontend expectations
-    const transformedReports = reports.map((report) => ({
+    console.log("🔐 Authenticated user:", userId)
+    await connectDB()
+
+    const reports = await Report.find({ userId }).sort({ createdAt: -1 }).lean()
+    console.log(`✅ Found ${reports.length} user reports`)
+
+    // Convert ObjectIds to strings for frontend compatibility
+    const formattedReports = reports.map((report) => ({
       ...report,
-      _id: report._id.toString(),
-      userId: report.userId._id.toString(),
-      user: {
-        _id: report.userId._id.toString(),
-        name: report.userId.name,
-        email: report.userId.email,
-      },
-    }));
+      _id: (report._id as { toString: () => string }).toString(),
+      userId: (report.userId as { toString: () => string } | undefined)?.toString() ?? null,
+    }))
 
-    return NextResponse.json(transformedReports);
+    return NextResponse.json(formattedReports)
   } catch (error) {
-    console.error('Get reports error:', error);
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error("❌ Get user reports error:", error)
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

@@ -1,68 +1,73 @@
-import jwt from 'jsonwebtoken';
+// src/lib/auth.ts
+import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 
-const JWT_SECRET = process.env.JWT_SECRET!;
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!;
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'fallback-secret-key'
+);
+const JWT_REFRESH_SECRET = new TextEncoder().encode(
+  process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret-key'
+);
 
-export function generateTokens(userId: string) {
-  const accessToken = jwt.sign({ userId }, JWT_SECRET, {
-    expiresIn: '15m',
-  });
+export async function generateTokens(userId: string) {
+  console.log('Generating tokens for user:', userId);
 
-  const refreshToken = jwt.sign({ userId }, JWT_REFRESH_SECRET, {
-    expiresIn: '7d',
-  });
+  const accessToken = await new SignJWT({ userId })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('2hr')
+    .sign(JWT_SECRET);
 
+  const refreshToken = await new SignJWT({ userId })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('7d')
+    .sign(JWT_REFRESH_SECRET);
+
+  console.log('Generated access token:', accessToken.substring(0, 20) + '...');
   return { accessToken, refreshToken };
 }
 
-export function verifyAccessToken(token: string) {
+export async function verifyAccessToken(token: string) {
   try {
-    return jwt.verify(token, JWT_SECRET) as { userId: string };
-  } catch {
+    console.log('Verifying token:', token.substring(0, 20) + '...');
+    // This is only used in Node.js environment (API routes)
+    const { jwtVerify } = await import('jose');
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    console.log('Token verified successfully for user:', payload.userId);
+    return { userId: payload.userId as string };
+  } catch (error) {
+    console.log(
+      'Token verification failed:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return null;
   }
 }
 
-export function verifyRefreshToken(token: string) {
+export async function verifyRefreshToken(token: string) {
   try {
-    return jwt.verify(token, JWT_REFRESH_SECRET) as { userId: string };
+    // This is only used in Node.js environment (API routes)
+    const { jwtVerify } = await import('jose');
+    const { payload } = await jwtVerify(token, JWT_REFRESH_SECRET);
+    return { userId: payload.userId as string };
   } catch {
     return null;
   }
-}
-
-export async function setAuthCookies(
-  accessToken: string,
-  refreshToken: string
-) {
-  const cookieStore = cookies();
-
-  (await cookieStore).set('accessToken', accessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 15 * 60, // 15 minutes
-  });
-  (await cookieStore).set('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60, // 7 days
-  });
 }
 
 export async function getAuthUser() {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get('accessToken')?.value;
+  try {
+    const cookieStore = cookies();
+    const accessToken = (await cookieStore).get('accessToken')?.value;
+    console.log('Getting auth user, token exists:', !!accessToken);
 
-  if (!accessToken) return null;
+    if (!accessToken) return null;
 
-  const payload = verifyAccessToken(accessToken);
-  return payload?.userId || null;
-}
-export async function clearAuthCookies() {
-  const cookieStore = cookies();
-  (await cookieStore).delete('accessToken');
-  (await cookieStore).delete('refreshToken');
+    const payload = await verifyAccessToken(accessToken);
+    return payload?.userId || null;
+  } catch (error) {
+    console.error('Error getting auth user:', error);
+    return null;
+  }
 }

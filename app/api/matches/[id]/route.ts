@@ -1,7 +1,7 @@
 import { getAuthUser } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import Match from '@/models/Match';
-import Reports from '@/models/Reports';
+import Reports from '@/models/Report';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function PATCH(

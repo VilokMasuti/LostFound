@@ -74,7 +74,7 @@ export const reportSchema = z.object({
     .trim()
     .optional()
     .or(z.literal('')),
-  priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']),
   image: z.any().optional(),
 });
 

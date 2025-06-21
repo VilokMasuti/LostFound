@@ -60,6 +60,7 @@ const MessageSchema = new mongoose.Schema(
           'Message type must be inquiry, match_notification, general, or system',
       },
       default: 'inquiry',
+
     },
     priority: {
       type: String,
@@ -68,6 +69,7 @@ const MessageSchema = new mongoose.Schema(
         message: 'Priority must be low, normal, or high',
       },
       default: 'normal',
+
     },
     attachments: [
       {

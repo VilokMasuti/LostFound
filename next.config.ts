@@ -1,6 +1,10 @@
-import type { NextConfig } from "next"
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    serverActions: {
+      allowedOrigins: ["localhost:3000", "127.0.0.1:3000"],
+    },
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -8,18 +12,16 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "res.cloudinary.com",
-        port: "",
-        pathname: "/**",
-      },
-    ],
-    unoptimized: false,
+    domains: ["res.cloudinary.com"],
+    unoptimized: true,
   },
-  experimental: {
-    serverComponentsExternalPackages: ["mongoose"],
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: "/api/:path*",
+      },
+    ]
   },
 }
 

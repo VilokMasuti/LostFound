@@ -1,4 +1,4 @@
-import { IUser } from '@/type/models';
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
@@ -66,8 +66,8 @@ const UserSchema = new mongoose.Schema(
     },
   }
 );
-// Indexes for performance
-UserSchema.index({ email: 1 });
+
+// Remove duplicate index - only keep the schema-level unique: true
 UserSchema.index({ emailVerificationToken: 1 });
 UserSchema.index({ passwordResetToken: 1 });
 UserSchema.index({ createdAt: -1 });
@@ -75,6 +75,7 @@ UserSchema.index({ createdAt: -1 });
 // Hash password before saving
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
+
   try {
     const salt = await bcrypt.genSalt(12);
     this.password = await bcrypt.hash(this.password, salt);
@@ -85,13 +86,11 @@ UserSchema.pre('save', async function (next) {
 });
 
 // Compare password method
-
 UserSchema.methods.comparePassword = async function (
   candidatePassword: string
 ): Promise<boolean> {
   try {
     return await bcrypt.compare(candidatePassword, this.password);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     throw new Error('Password comparison failed');
   }
@@ -108,5 +107,4 @@ UserSchema.methods.createPasswordResetToken = function (): string {
   return resetToken;
 };
 
-export default mongoose.models.User ||
-  mongoose.model<IUser>('User', UserSchema);
+export default mongoose.models.User || mongoose.model('User', UserSchema);

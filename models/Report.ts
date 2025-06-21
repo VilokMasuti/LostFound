@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { IReport } from '@/type/models';
-import mongoose from 'mongoose';
+
+import mongoose, { models } from 'mongoose';
 
 const ReportSchema = new mongoose.Schema(
   {
@@ -183,4 +183,6 @@ ReportSchema.statics.findSimilar = function (report: any, limit = 10) {
     .limit(limit)
     .sort({ createdAt: -1 });
 };
-export default mongoose.model<IReport>('Report', ReportSchema);
+export const Report = models.Report || mongoose.model('Report', ReportSchema);
+
+export default Report;
