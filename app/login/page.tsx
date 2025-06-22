@@ -7,8 +7,8 @@ import Silk from '@/components/ui/Silk';
 import { useAuth } from '@/context/AuthContext';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -21,7 +21,6 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 const Index = () => {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
@@ -47,7 +46,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-2">
-      {/* Left Side - Image Section */}
+      {/* Left Side - Image Section (UNCHANGED) */}
       <div className="hidden lg:block relative w-full h-screen">
         <Silk
           speed={5}
@@ -58,19 +57,29 @@ const Index = () => {
         />
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center px-10">
           <div className="text-center text-white">
-            <h2 className="text-4xl font-bold mb-4  font-serif opacity-10">
+            <h2 className="text-4xl font-bold mb-4 font-serif opacity-10 tracking-widest">
               Welcome Back
             </h2>
-            <p className="text-lg font-light text-gray-200">
-              Secure login, elegant design.
+            <p className="text-lg font-light opacity-15 mb-6">
+              Secure login, Lost will find its way back home.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Right Side - Login Form */}
-      <div className="flex items-center justify-center p-8 bg-white shadow-2xl lg:rounded-l-none rounded-lg">
-        <div className="w-full max-w-md">
+      {/* Right Side - Login Form with Background Logo + Glass Card */}
+      <div className="flex items-center justify-center p-8 relative  lg:rounded-l-none rounded-lg overflow-hidden">
+        {/* Logo background behind form */}
+        <Image
+          src="/bglogo.png"
+          alt="Reconnect Logo"
+          width={1000}
+          height={1000}
+          className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+        />
+
+        {/* Glass effect login card */}
+        <div className="w-full max-w-md bg-white/30 backdrop-blur-xl border border-white/20 rounded-2xl p-8 shadow-lg relative z-10">
           <div className="text-center mb-10">
             <div className="inline-flex items-center justify-center w-14 h-14 bg-black rounded-2xl mb-4">
               <div className="w-5 h-5 bg-white rounded-md"></div>
@@ -96,7 +105,7 @@ const Index = () => {
                 id="email"
                 type="email"
                 placeholder="you@example.com"
-                className="h-11 bg-gray-50 border text-black border-gray-200 focus:border-black focus:ring-black rounded-xl"
+                className="h-11 bg-white/70 border border-gray-300 text-black rounded-xl"
                 {...register('email')}
               />
               {errors.email && (
@@ -117,13 +126,13 @@ const Index = () => {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Enter your password"
-                  className="h-11 pr-10 text-black bg-gray-50 border border-gray-200 focus:border-black focus:ring-black rounded-xl"
+                  className="h-11 pr-10 bg-white/70 text-black border border-gray-300 rounded-xl"
                   {...register('password')}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -139,25 +148,13 @@ const Index = () => {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-11 bg-black hover:bg-gray-800 text-white rounded-xl transition-all"
+              className="w-full h-11 bg-black hover:bg-gray-800 text-white rounded-xl"
             >
               {isLoading ? 'Signing In...' : 'Sign In'}
             </Button>
 
-            {/* Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-500">
-                  or continue with
-                </span>
-              </div>
-            </div>
-
             {/* Sign Up */}
-            <p className="text-center text-gray-600 text-sm">
+            <p className="text-center text-gray-700 text-sm">
               Don&apos;t have an account?{' '}
               <Link
                 href="/register"

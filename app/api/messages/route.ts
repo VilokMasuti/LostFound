@@ -1,13 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import connectDB from '@/lib/mongodb';
-import Message from '@/models/Message';
-import { type NextRequest, NextResponse } from 'next/server';
-
 import { getAuthUser } from '@/lib/auth';
+import connectDB from '@/lib/mongodb';
 import { messageSchema } from '@/lib/validations';
-import Reports from '@/models/Report';
+import Message from '@/models/Message';
+import Report from '@/models/Report';
 import User from '@/models/User';
 import type { Types } from 'mongoose';
+import { type NextRequest, NextResponse } from 'next/server';
 
 // Define interfaces for populated documents
 interface PopulatedUser {
@@ -70,24 +69,30 @@ export async function GET() {
       .lean();
 
     // Transform the data to match our Message type
-    const transformedMessages = messages.map((msg: any) => ({
-      ...msg,
-      _id: msg._id.toString(),
-      from: {
-        _id: msg.from._id.toString(),
-        name: msg.from.name,
-        email: msg.from.email,
-      },
-      to: {
-        _id: userId,
-      },
-      reportId: msg.reportId._id.toString(),
-      report: {
-        ...msg.reportId,
-        _id: msg.reportId._id.toString(),
-        userId: msg.reportId.userId._id.toString(),
-      },
-    }));
+    const transformedMessages = messages.map((msg: any) => {
+      const report = msg.reportId;
+
+      return {
+        ...msg,
+        _id: msg._id.toString(),
+        from: {
+          _id: msg.from._id.toString(),
+          name: msg.from.name,
+          email: msg.from.email,
+        },
+        to: {
+          _id: userId,
+        },
+        reportId: report?._id?.toString() || null,
+        report: report
+          ? {
+              ...report,
+              _id: report._id.toString(),
+              userId: report.userId?._id?.toString() || null,
+            }
+          : null,
+      };
+    });
 
     return NextResponse.json(transformedMessages);
   } catch (error) {
@@ -107,14 +112,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    console.log('Received message data:', body); // Debug logging
 
-    // Validate input
+    // Validate input with better error handling
     const validationResult = messageSchema.safeParse(body);
     if (!validationResult.success) {
+      console.error('Validation errors:', validationResult.error.flatten());
       return NextResponse.json(
         {
           message: 'Invalid input data',
           errors: validationResult.error.flatten().fieldErrors,
+          details: validationResult.error.issues,
         },
         { status: 400 }
       );
@@ -126,7 +134,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     // Get the report and verify it exists
-    const report = await Reports.findById(reportId).populate(
+    const report = await Report.findById(reportId).populate(
       'userId',
       'name email'
     );
@@ -146,23 +154,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Prevent users from messaging their own reports
-    if (report.userId && report.userId._id.toString() === userId) {
+    if (report.userId._id.toString() === userId) {
       return NextResponse.json(
         { message: 'You cannot message your own report' },
-        { status: 400 }
-      );
-    }
-
-    // Check if user has already sent a message for this report (prevent spam)
-    const existingMessage = await Message.findOne({
-      from: userId,
-      reportId: reportId,
-      deleted: false,
-    });
-
-    if (existingMessage) {
-      return NextResponse.json(
-        { message: 'You have already sent a message about this report' },
         { status: 400 }
       );
     }
@@ -177,12 +171,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the message
-    if (!report.userId || !report.userId._id) {
-      return NextResponse.json(
-        { message: 'Report owner not found' },
-        { status: 404 }
-      );
-    }
     const newMessage = await Message.create({
       from: userId,
       to: report.userId._id,

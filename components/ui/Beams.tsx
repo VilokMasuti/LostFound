@@ -335,7 +335,7 @@ function createStackedPlanesBufferGeometry(
   geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
   geometry.setIndex(new THREE.BufferAttribute(indices, 1));
   geometry.computeVertexNormals();
-  return geometry;
+  return geometry as unknown as THREE.BufferGeometry;
 }
 
 const MergedPlanes = forwardRef<

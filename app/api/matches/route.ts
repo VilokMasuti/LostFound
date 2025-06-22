@@ -1,120 +1,108 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import connectDB from '@/lib/mongodb';
-import Match from '@/models/Match';
-import { NextResponse } from 'next/server';
-
-import { getAuthUser } from '@/lib/auth';
-import Reports from '@/models/Report';
-import type { Types } from 'mongoose';
-
-// Define interfaces for populated documents
-interface PopulatedUser {
-  _id: Types.ObjectId;
-  name: string;
-  email: string;
-}
-
-interface PopulatedReportInMatch {
-  _id: Types.ObjectId;
-  brand: string;
-  color: string;
-  type: string;
-  location: string;
-  description: string;
-  dateLostFound: Date;
-  imageUrl?: string;
-  userId: PopulatedUser;
-}
-
-interface PopulatedMatch {
-  _id: Types.ObjectId;
-  reportId: PopulatedReportInMatch;
-  matchedReportId: PopulatedReportInMatch;
-  similarity: number;
-  matchedBy: string;
-  status: string;
-  confidence: string;
-  matchCriteria: any;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { NextResponse } from "next/server"
+import connectDB from "@/lib/mongodb"
+import Match from "@/models/Match"
+import { getAuthUser } from "@/lib/auth"
 
 export async function GET() {
   try {
-    const userId = await getAuthUser();
+    const userId = await getAuthUser()
     if (!userId) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
 
-    await connectDB();
+    console.log("🔍 Fetching matches for user:", userId)
 
-    // Get user's reports
-    const userReports = await Reports.find({ userId }).select('_id');
-    const userReportIds = userReports.map((report) => report._id);
+    await connectDB()
 
-    // Find matches for user's reports
-    const matches = (await Match.find({
-      $or: [
-        { reportId: { $in: userReportIds } },
-        { matchedReportId: { $in: userReportIds } },
-      ],
-      status: 'pending',
+    // Find matches where user owns either report
+    const matches = await Match.find({
+      $or: [{ reportId: { $exists: true } }, { matchedReportId: { $exists: true } }],
     })
       .populate({
-        path: 'reportId',
-        select:
-          'brand color type location description dateLostFound imageUrl userId',
+        path: "reportId",
+        select: "brand color type location description dateLostFound imageUrl userId",
         populate: {
-          path: 'userId',
-          select: 'name email',
+          path: "userId",
+          select: "name email",
         },
       })
       .populate({
-        path: 'matchedReportId',
-        select:
-          'brand color type location description dateLostFound imageUrl userId',
+        path: "matchedReportId",
+        select: "brand color type location description dateLostFound imageUrl userId",
         populate: {
-          path: 'userId',
-          select: 'name email',
+          path: "userId",
+          select: "name email",
         },
       })
-      .sort({ similarity: -1, createdAt: -1 })
-      .lean()) as unknown as PopulatedMatch[];
+      .lean()
 
-    // Transform the data
-    const transformedMatches = matches.map((match) => ({
-      ...match,
-      _id: match._id.toString(),
-      reportId: match.reportId._id.toString(),
-      matchedReportId: match.matchedReportId._id.toString(),
-      report: {
-        ...match.reportId,
-        _id: match.reportId._id.toString(),
-        userId: match.reportId.userId._id.toString(),
-        user: {
-          _id: match.reportId.userId._id.toString(),
-          name: match.reportId.userId.name,
-          email: match.reportId.userId.email,
-        },
-      },
-      matchedReport: {
-        ...match.matchedReportId,
-        _id: match.matchedReportId._id.toString(),
-        userId: match.matchedReportId.userId._id.toString(),
-        user: {
-          _id: match.matchedReportId.userId._id.toString(),
-          name: match.matchedReportId.userId.name,
-          email: match.matchedReportId.userId.email,
-        },
-      },
-    }));
+    console.log("📊 Found matches:", matches.length)
 
-    return NextResponse.json(transformedMatches);
+    // Filter matches where user owns either report and transform data
+    const userMatches = matches
+      .filter((match) => {
+        const reportId = match.reportId as any
+        const matchedReportId = match.matchedReportId as any
+
+        return reportId?.userId?._id?.toString() === userId || matchedReportId?.userId?._id?.toString() === userId
+      })
+      .map((match) => {
+        const reportId = match.reportId as any
+        const matchedReportId = match.matchedReportId as any
+
+        return {
+          _id: (match._id as any)?.toString(),
+          reportId: reportId?._id?.toString() || null,
+          matchedReportId: matchedReportId?._id?.toString() || null,
+          similarity: match.similarity,
+          confidence: match.confidence,
+          status: match.status,
+          createdAt: match.createdAt,
+          updatedAt: match.updatedAt,
+          report: reportId
+            ? {
+                _id: reportId._id.toString(),
+                brand: reportId.brand,
+                color: reportId.color,
+                type: reportId.type,
+                location: reportId.location,
+                description: reportId.description,
+                dateLostFound: reportId.dateLostFound,
+                imageUrl: reportId.imageUrl,
+                userId: reportId.userId._id.toString(),
+                user: {
+                  _id: reportId.userId._id.toString(),
+                  name: reportId.userId.name,
+                  email: reportId.userId.email,
+                },
+              }
+            : null,
+          matchedReport: matchedReportId
+            ? {
+                _id: matchedReportId._id.toString(),
+                brand: matchedReportId.brand,
+                color: matchedReportId.color,
+                type: matchedReportId.type,
+                location: matchedReportId.location,
+                description: matchedReportId.description,
+                dateLostFound: matchedReportId.dateLostFound,
+                imageUrl: matchedReportId.imageUrl,
+                userId: matchedReportId.userId._id.toString(),
+                user: {
+                  _id: matchedReportId.userId._id.toString(),
+                  name: matchedReportId.userId.name,
+                  email: matchedReportId.userId.email,
+                },
+              }
+            : null,
+        }
+      })
+
+    console.log("✅ User matches found:", userMatches.length)
+    return NextResponse.json(userMatches)
   } catch (error) {
-    console.error('Get matches error:', error);
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error("Get matches error:", error)
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

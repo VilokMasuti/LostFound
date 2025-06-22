@@ -153,8 +153,7 @@ export default function ReportsPage() {
       {/* Animated Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-gray-900 dark:via-emerald-900 dark:to-teal-900" />
 
-      {/* Floating Particles */}
-      <FloatingParticles count={35} />
+
 
       <div className="container mx-auto px-4 py-24 relative z-10">
         <motion.div

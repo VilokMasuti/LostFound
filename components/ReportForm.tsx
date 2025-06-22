@@ -1,10 +1,20 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import { submitReport } from '@/app/actions/reports';
+import type React from 'react';
+
 import { AnimatedInput } from '@/components/ui/AnimatedInput';
 import { FloatingParticles } from '@/components/ui/floating-particles';
 import { FuturisticButton } from '@/components/ui/futuristic-button';
 import { GlassCard } from '@/components/ui/glass-card';
+import { reportSchema, type ReportFormData } from '@/lib/validations';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+
+import { submitReport } from '@/app/actions/reports';
+import { SuccessScreen } from '@/components/success-screen';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -16,10 +26,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { reportSchema, type ReportFormData } from '@/lib/validations';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  AlertCircle,
   Calendar,
   Camera,
   CheckCircle,
@@ -33,11 +42,9 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import { redirect } from 'next/navigation';
-import type React from 'react';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { ProgressIndicator } from './progress-indicator';
 
 const PHONE_BRANDS = [
   'Apple',
@@ -85,6 +92,19 @@ export function ReportForm() {
   const [completedSections, setCompletedSections] = useState<Set<number>>(
     new Set()
   );
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+  const [showProgress, setShowProgress] = useState(false);
+  const [progressStage, setProgressStage] = useState<
+    'uploading' | 'processing' | 'matching' | 'complete'
+  >('uploading');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [submissionResult, setSubmissionResult] = useState<{
+    matches: number;
+    type: 'lost' | 'found';
+  } | null>(null);
+  const router = useRouter();
 
   const {
     register,
@@ -94,6 +114,8 @@ export function ReportForm() {
     reset,
     formState: { errors },
     trigger,
+    setError,
+    clearErrors,
   } = useForm<ReportFormData>({
     resolver: zodResolver(reportSchema),
     defaultValues: {
@@ -118,12 +140,25 @@ export function ReportForm() {
         setImagePreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
+
+      // Show upload progress simulation
+      setUploadProgress(0);
+      const interval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return prev + 10;
+        });
+      }, 100);
     }
   };
 
   const removeImage = () => {
     setSelectedImage(null);
     setImagePreview(null);
+    setUploadProgress(0);
   };
 
   const validateSection = async (sectionIndex: number) => {
@@ -142,11 +177,17 @@ export function ReportForm() {
       case 3: // description
         fieldsToValidate = ['description'];
         break;
-      case 4: // contact (optional)
-        return true; // Contact is optional
+      case 4: // contact (optional but validate if filled)
+        const contactEmail = watch('contactEmail');
+        const contactPhone = watch('contactPhone');
+        if (contactEmail) fieldsToValidate.push('contactEmail');
+        if (contactPhone) fieldsToValidate.push('contactPhone');
+        break;
       case 5: // image (optional)
-        return true; // Image is optional
+        return true;
     }
+
+    if (fieldsToValidate.length === 0) return true;
 
     const isValid = await trigger(fieldsToValidate);
     if (isValid) {
@@ -156,49 +197,58 @@ export function ReportForm() {
   };
 
   const nextSection = async () => {
-    console.log('Next section clicked, current:', currentSection);
     const isValid = await validateSection(currentSection);
-    console.log('Section validation result:', isValid);
     if (isValid && currentSection < formSections.length - 1) {
       setCurrentSection(currentSection + 1);
     }
   };
 
   const prevSection = () => {
-    console.log('Previous section clicked');
     if (currentSection > 0) {
       setCurrentSection(currentSection - 1);
     }
   };
 
   const handleSubmitButtonClick = async (e: React.MouseEvent) => {
-    console.log('🔘 Submit button clicked!');
     e.preventDefault();
+    setSubmitError(null);
+    setFieldErrors({});
 
-    // Validate all required sections first
+    // Validate all sections
     const allValid = await Promise.all([
       validateSection(0), // type
       validateSection(1), // details
       validateSection(2), // location
       validateSection(3), // description
+      validateSection(4), // contact (optional)
     ]);
 
-    console.log('All sections valid:', allValid);
-
     if (allValid.every(Boolean)) {
-      console.log('✅ All validations passed, submitting form...');
       setIsSubmitting(true);
+      setShowProgress(true);
+      setProgressStage('uploading');
 
       try {
         const formData = new FormData();
         const data = watch();
 
-        // Append all form fields
+        // Simulate upload progress
+        if (selectedImage) {
+          setProgressStage('uploading');
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+
+        setProgressStage('processing');
+        await new Promise((resolve) => setTimeout(resolve, 800));
+
+        // Append all form fields, handling empty strings properly
         Object.entries(data).forEach(([key, value]) => {
-          if (value !== undefined && value !== '') {
+          if (value !== undefined && value !== null) {
             if (key === 'dateLostFound') {
               formData.append(key, (value as Date).toISOString());
-            } else {
+            } else if (typeof value === 'string' && value.trim() !== '') {
+              formData.append(key, value.trim());
+            } else if (typeof value !== 'string') {
               formData.append(key, value as string);
             }
           }
@@ -209,29 +259,106 @@ export function ReportForm() {
           formData.append('image', selectedImage);
         }
 
-        console.log('📤 Calling submitReport server action...');
-        await submitReport(formData);
+        setProgressStage('matching');
+        await new Promise((resolve) => setTimeout(resolve, 1200));
 
-        // The server action will handle the redirect
-        toast.success('Report submitted successfully!');
+        const result = await submitReport(formData);
 
-        // Reset form state
-        reset();
-        setSelectedImage(null);
-        setImagePreview(null);
-        setCurrentSection(0);
-        setCompletedSections(new Set());
+        setProgressStage('complete');
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        if (result.success) {
+          // Show initial success toast
+          toast.success(
+            watchType === 'lost'
+              ? "✅ Your report is live! We'll notify you if we find a match."
+              : "❤️ Thank you for helping! We'll let the owner know.",
+            { duration: 4000 }
+          );
+
+          // Show match notification if matches found
+          if (result.matches && result.matches > 0) {
+            setTimeout(() => {
+              toast.success(
+                `🎯 Great news! We've found ${result.matches} possible match${
+                  result.matches > 1 ? 'es' : ''
+                }. Review ${result.matches > 1 ? 'them' : 'it'} now.`,
+                {
+                  duration: 6000,
+                }
+              );
+            }, 1000);
+          }
+
+          // Set submission result for success screen
+          setSubmissionResult({
+            matches: result.matches || 0,
+            type: watchType,
+          });
+
+          // Reset form
+          reset();
+          setSelectedImage(null);
+          setImagePreview(null);
+          setCurrentSection(0);
+          setCompletedSections(new Set());
+          setShowProgress(false);
+          setShowSuccess(true);
+        } else {
+          setShowProgress(false);
+
+          // Handle validation errors
+          if (result.fieldErrors) {
+            setFieldErrors(result.fieldErrors);
+            // Set form errors for individual fields
+            Object.entries(result.fieldErrors).forEach(([field, errors]) => {
+              if (errors && errors.length > 0) {
+                setError(field as keyof ReportFormData, {
+                  type: 'manual',
+                  message: errors[0],
+                });
+              }
+            });
+
+            // Go back to the section with errors
+            if (
+              result.fieldErrors.contactPhone ||
+              result.fieldErrors.contactEmail
+            ) {
+              setCurrentSection(4); // Contact section
+            } else if (result.fieldErrors.description) {
+              setCurrentSection(3); // Description section
+            } else if (
+              result.fieldErrors.location ||
+              result.fieldErrors.dateLostFound
+            ) {
+              setCurrentSection(2); // Location section
+            } else if (result.fieldErrors.brand || result.fieldErrors.color) {
+              setCurrentSection(1); // Details section
+            } else if (result.fieldErrors.type) {
+              setCurrentSection(0); // Type section
+            }
+          }
+
+          setSubmitError(result.error || 'Failed to submit report');
+          toast.error(result.error || 'Failed to submit report');
+        }
       } catch (error) {
         console.error('💥 Submission error:', error);
-        toast.error('An unexpected error occurred');
+        setShowProgress(false);
+        setSubmitError('An unexpected error occurred. Please try again.');
+        toast.error('An unexpected error occurred. Please try again.');
       } finally {
         setIsSubmitting(false);
       }
     } else {
-      console.log('❌ Validation failed');
-      toast.error('Please fill in all required fields');
+      toast.error('Please fill in all required fields correctly');
     }
-    redirect('/reports');
+  };
+
+  const handleSuccessContinue = () => {
+    setShowSuccess(false);
+    router.push('/dashboard');
   };
 
   const renderSectionContent = () => {
@@ -256,9 +383,10 @@ export function ReportForm() {
 
             <RadioGroup
               value={watchType}
-              onValueChange={(value) =>
-                setValue('type', value as 'lost' | 'found')
-              }
+              onValueChange={(value) => {
+                setValue('type', value as 'lost' | 'found');
+                clearErrors('type');
+              }}
               className="grid grid-cols-2 gap-4"
             >
               <motion.div
@@ -311,6 +439,15 @@ export function ReportForm() {
                 </Label>
               </motion.div>
             </RadioGroup>
+
+            {errors.type && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{errors.type.message}</AlertDescription>
+                </Alert>
+              </motion.div>
+            )}
           </motion.div>
         );
 
@@ -334,10 +471,19 @@ export function ReportForm() {
               <div className="space-y-2">
                 <Label className="text-base font-medium flex items-center gap-2">
                   <Phone className="w-4 h-4" />
-                  Phone Brand
+                  Phone Brand *
                 </Label>
-                <Select onValueChange={(value) => setValue('brand', value)}>
-                  <SelectTrigger className="glass h-12">
+                <Select
+                  onValueChange={(value) => {
+                    setValue('brand', value);
+                    clearErrors('brand');
+                  }}
+                >
+                  <SelectTrigger
+                    className={`glass h-12 ${
+                      errors.brand ? 'border-destructive' : ''
+                    }`}
+                  >
                     <SelectValue placeholder="Select brand" />
                   </SelectTrigger>
                   <SelectContent className="glass-card">
@@ -362,10 +508,19 @@ export function ReportForm() {
               <div className="space-y-2">
                 <Label className="text-base font-medium flex items-center gap-2">
                   <Palette className="w-4 h-4" />
-                  Phone Color
+                  Phone Color *
                 </Label>
-                <Select onValueChange={(value) => setValue('color', value)}>
-                  <SelectTrigger className="glass h-12">
+                <Select
+                  onValueChange={(value) => {
+                    setValue('color', value);
+                    clearErrors('color');
+                  }}
+                >
+                  <SelectTrigger
+                    className={`glass h-12 ${
+                      errors.color ? 'border-destructive' : ''
+                    }`}
+                  >
                     <SelectValue placeholder="Select color" />
                   </SelectTrigger>
                   <SelectContent className="glass-card">
@@ -410,11 +565,12 @@ export function ReportForm() {
               <div className="space-y-2">
                 <Label className="text-base font-medium flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
-                  Location
+                  Location *
                 </Label>
                 <AnimatedInput
                   placeholder="Where was the phone lost/found? (e.g., Central Park, NYC)"
                   icon={<MapPin className="w-4 h-4" />}
+                  className={errors.location ? 'border-destructive' : ''}
                   {...register('location')}
                 />
                 {errors.location && (
@@ -431,11 +587,12 @@ export function ReportForm() {
               <div className="space-y-2">
                 <Label className="text-base font-medium flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  Date {watchType === 'lost' ? 'Lost' : 'Found'}
+                  Date {watchType === 'lost' ? 'Lost' : 'Found'} *
                 </Label>
                 <AnimatedInput
                   type="date"
                   icon={<Calendar className="w-4 h-4" />}
+                  className={errors.dateLostFound ? 'border-destructive' : ''}
                   {...register('dateLostFound', { valueAsDate: true })}
                 />
                 {errors.dateLostFound && (
@@ -471,12 +628,14 @@ export function ReportForm() {
             <div className="space-y-2">
               <Label className="text-base font-medium flex items-center gap-2">
                 <FileText className="w-4 h-4" />
-                Additional Details
+                Additional Details *
               </Label>
               <Textarea
                 placeholder="Provide additional details about the phone (model, case, distinctive features, etc.)"
                 rows={6}
-                className="glass resize-none"
+                className={`glass resize-none ${
+                  errors.description ? 'border-destructive' : ''
+                }`}
                 {...register('description')}
               />
               {errors.description && (
@@ -518,6 +677,7 @@ export function ReportForm() {
                   type="email"
                   placeholder="your@email.com"
                   icon={<Mail className="w-4 h-4" />}
+                  className={errors.contactEmail ? 'border-destructive' : ''}
                   {...register('contactEmail')}
                 />
                 {errors.contactEmail && (
@@ -538,8 +698,9 @@ export function ReportForm() {
                 </Label>
                 <AnimatedInput
                   type="tel"
-                  placeholder="+1 (555) 123-4567"
+                  placeholder="+91 9876543210"
                   icon={<MessageCircle className="w-4 h-4" />}
+                  className={errors.contactPhone ? 'border-destructive' : ''}
                   {...register('contactPhone')}
                 />
                 {errors.contactPhone && (
@@ -551,6 +712,9 @@ export function ReportForm() {
                     {errors.contactPhone.message}
                   </motion.p>
                 )}
+                <p className="text-xs text-muted-foreground">
+                  Format: +91 9876543210, 123-456-7890, or (123) 456-7890
+                </p>
               </div>
             </div>
           </motion.div>
@@ -573,7 +737,7 @@ export function ReportForm() {
             </div>
 
             <div className="space-y-4">
-              <div className="glass-card p-8 border-2 border-dashed border-primary/20 hover:border-primary/40 transition-colors">
+              <div className="glass-card p-8 border-2 border-dashed border-primary/20 hover:border-primary/40 transition-colors relative">
                 {imagePreview ? (
                   <div className="relative">
                     <motion.img
@@ -593,6 +757,24 @@ export function ReportForm() {
                     >
                       <X className="w-4 h-4" />
                     </motion.button>
+
+                    {uploadProgress > 0 && uploadProgress < 100 && (
+                      <div className="absolute bottom-2 left-2 right-2">
+                        <div className="bg-black/50 rounded-full p-2">
+                          <div className="w-full bg-gray-300 rounded-full h-1">
+                            <motion.div
+                              className="bg-primary h-1 rounded-full"
+                              initial={{ width: 0 }}
+                              animate={{ width: `${uploadProgress}%` }}
+                              transition={{ duration: 0.3 }}
+                            />
+                          </div>
+                          <p className="text-white text-xs text-center mt-1">
+                            Uploading... {uploadProgress}%
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="text-center">
@@ -605,14 +787,14 @@ export function ReportForm() {
                         PNG, JPG up to 5MB
                       </p>
                     </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
                   </div>
                 )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
               </div>
             </div>
           </motion.div>
@@ -624,116 +806,145 @@ export function ReportForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden py-12">
-      {/* Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 dark:from-gray-900 dark:via-orange-900 dark:to-red-900" />
+    <>
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden py-12">
+        {/* Animated Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 dark:from-gray-900 dark:via-orange-900 dark:to-red-900" />
 
-      {/* Floating Particles */}
-      <FloatingParticles count={25} />
+        {/* Floating Particles */}
+        <FloatingParticles count={25} />
 
-      <div className="container mx-auto px-4 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="max-w-4xl mx-auto"
-        >
-          {/* Progress Bar */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              {formSections.map((section, index) => (
-                <motion.div
-                  key={section.id}
-                  className="flex items-center"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                      index === currentSection
-                        ? 'bg-primary text-primary-foreground glow-primary'
-                        : completedSections.has(index)
-                        ? 'bg-green-500 text-white'
-                        : 'bg-muted text-muted-foreground'
-                    }`}
+        <div className="container mx-auto px-4 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="max-w-4xl mx-auto"
+          >
+            {/* Progress Bar */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                {formSections.map((section, index) => (
+                  <motion.div
+                    key={section.id}
+                    className="flex items-center"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.1 }}
                   >
-                    {completedSections.has(index) ? (
-                      <CheckCircle className="w-5 h-5" />
-                    ) : (
-                      <section.icon className="w-5 h-5" />
-                    )}
-                  </div>
-                  {index < formSections.length - 1 && (
                     <div
-                      className={`w-12 h-0.5 mx-2 transition-colors ${
-                        completedSections.has(index)
-                          ? 'bg-green-500'
-                          : 'bg-muted'
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                        index === currentSection
+                          ? 'bg-primary text-primary-foreground glow-primary'
+                          : completedSections.has(index)
+                          ? 'bg-green-500 text-white'
+                          : 'bg-muted text-muted-foreground'
                       }`}
-                    />
-                  )}
+                    >
+                      {completedSections.has(index) ? (
+                        <CheckCircle className="w-5 h-5" />
+                      ) : (
+                        <section.icon className="w-5 h-5" />
+                      )}
+                    </div>
+                    {index < formSections.length - 1 && (
+                      <div
+                        className={`w-12 h-0.5 mx-2 transition-colors ${
+                          completedSections.has(index)
+                            ? 'bg-green-500'
+                            : 'bg-muted'
+                        }`}
+                      />
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+              <div className="text-center">
+                <h2 className="text-sm font-medium text-muted-foreground">
+                  Step {currentSection + 1} of {formSections.length}
+                </h2>
+              </div>
+            </div>
+
+            <GlassCard className="p-8" glow>
+              {/* Error Alert */}
+              {submitError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-6"
+                >
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{submitError}</AlertDescription>
+                  </Alert>
                 </motion.div>
-              ))}
-            </div>
-            <div className="text-center">
-              <h2 className="text-sm font-medium text-muted-foreground">
-                Step {currentSection + 1} of {formSections.length}
-              </h2>
-            </div>
-          </div>
-
-          <GlassCard className="p-8" glow>
-            <AnimatePresence mode="wait">
-              {renderSectionContent()}
-            </AnimatePresence>
-
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8 pt-6 border-t border-white/10">
-              <FuturisticButton
-                type="button"
-                variant="ghost"
-                onClick={prevSection}
-                disabled={currentSection === 0}
-                className={currentSection === 0 ? 'invisible' : ''}
-              >
-                Previous
-              </FuturisticButton>
-
-              {currentSection === formSections.length - 1 ? (
-                <FuturisticButton
-                  type="button"
-                  variant="glow"
-                  disabled={isSubmitting}
-                  className="group"
-                  onClick={handleSubmitButtonClick}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <LoadingSpinner size="sm" className="mr-2" />
-                      Submitting Report...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform" />
-                      Submit Report
-                    </>
-                  )}
-                </FuturisticButton>
-              ) : (
-                <FuturisticButton
-                  type="button"
-                  variant="glow"
-                  onClick={nextSection}
-                >
-                  Next
-                </FuturisticButton>
               )}
-            </div>
-          </GlassCard>
-        </motion.div>
+
+              <AnimatePresence mode="wait">
+                {renderSectionContent()}
+              </AnimatePresence>
+
+              {/* Navigation Buttons */}
+              <div className="flex justify-between mt-8 pt-6 border-t border-white/10">
+                <FuturisticButton
+                  type="button"
+                  variant="ghost"
+                  onClick={prevSection}
+                  disabled={currentSection === 0}
+                  className={currentSection === 0 ? 'invisible' : ''}
+                >
+                  Previous
+                </FuturisticButton>
+
+                {currentSection === formSections.length - 1 ? (
+                  <FuturisticButton
+                    type="button"
+                    variant="glow"
+                    disabled={isSubmitting}
+                    className="group"
+                    onClick={handleSubmitButtonClick}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <LoadingSpinner size="sm" className="mr-2" />
+                        Submitting Report...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform" />
+                        Submit Report
+                      </>
+                    )}
+                  </FuturisticButton>
+                ) : (
+                  <FuturisticButton
+                    type="button"
+                    variant="glow"
+                    onClick={nextSection}
+                  >
+                    Next
+                  </FuturisticButton>
+                )}
+              </div>
+            </GlassCard>
+          </motion.div>
+        </div>
       </div>
-    </div>
+
+      {/* Progress Indicator */}
+      {showProgress && (
+        <ProgressIndicator stage={progressStage} progress={uploadProgress} />
+      )}
+
+      {/* Success Screen */}
+      {showSuccess && submissionResult && (
+        <SuccessScreen
+          type={submissionResult.type}
+          matchCount={submissionResult.matches}
+          onContinue={handleSuccessContinue}
+        />
+      )}
+    </>
   );
 }
-export default ReportForm;

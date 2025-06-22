@@ -1,7 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-'use client';
+"use client"
 
-import { Button } from '@/components/ui/button';
+import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { messageSchema, type MessageFormData } from "@/lib/validations"
+import type { Report } from "@/type"
 import {
   Dialog,
   DialogContent,
@@ -9,18 +13,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Textarea } from '@/components/ui/textarea';
-import type { Report } from '@/type';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { MessageCircle } from 'lucide-react';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
-import { z } from 'zod';
-import { messageSchema } from '../lib/validations';
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { MessageCircle, Send } from "lucide-react"
+import { toast } from "sonner"
+import { FuturisticButton } from "./ui/futuristic-button"
+import { z } from "zod"
 
 interface MessageDialogProps {
   report: Report;
@@ -81,26 +82,31 @@ export function MessageDialog({ report, disabled }: MessageDialogProps) {
     }
   };
 
+  // Define the button text based on report type or use a default
+  const buttonText = report.type === "lost" ? "Contact Finder" : "Contact Owner";
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" disabled={disabled}>
+        <FuturisticButton variant="outline" size="sm" disabled={disabled}>
           <MessageCircle className="h-4 w-4 mr-1" />
-          Message Owner
-        </Button>
+          {buttonText}
+        </FuturisticButton>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md glass-card">
         <DialogHeader>
-          <DialogTitle>Contact Report Owner</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <MessageCircle className="w-5 h-5 text-primary" />
+            Contact Report Owner
+          </DialogTitle>
           <DialogDescription>
-            Send a message about this {report.type} {report.brand}{' '}
-            {report.color} phone.
+            Send a message about this {report.type} {report.brand} {report.color} phone.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <input type="hidden" {...register('reportId')} />
-          <input type="hidden" {...register('messageType')} />
-          <input type="hidden" {...register('priority')} />
+          <input type="hidden" {...register("reportId")} />
+          <input type="hidden" {...register("messageType")} />
+          <input type="hidden" {...register("priority")} />
 
           <div className="space-y-2">
             <Label htmlFor="subject">Subject (Optional)</Label>
@@ -109,52 +115,43 @@ export function MessageDialog({ report, disabled }: MessageDialogProps) {
               type="text"
               placeholder="Subject for your message"
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              {...register('subject')}
+              {...register("subject")}
             />
-            {errors.subject && (
-              <p className="text-sm text-destructive">
-                {errors.subject.message}
-              </p>
-            )}
+            {errors.subject && <p className="text-sm text-destructive">{errors.subject.message}</p>}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="message">Your Message</Label>
             <Textarea
               id="message"
-              placeholder="Hi, I think I found/lost your phone. Please contact me..."
+              placeholder={`Hi! I ${report.type === "lost" ? "found" : "lost"} a phone that matches your description. Please contact me so we can arrange the return.`}
               rows={4}
-              {...register('message')}
+              className="glass resize-none"
+              {...register("message")}
             />
-            {errors.message && (
-              <p className="text-sm text-destructive">
-                {errors.message.message}
-              </p>
-            )}
+            {errors.message && <p className="text-sm text-destructive">{errors.message.message}</p>}
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <FuturisticButton type="submit" variant="glow" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <LoadingSpinner size="sm" className="mr-2" />
                   Sending...
                 </>
               ) : (
-                'Send Message'
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Send Message
+                </>
               )}
-            </Button>
+            </FuturisticButton>
           </div>
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

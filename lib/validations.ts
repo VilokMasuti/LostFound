@@ -55,9 +55,7 @@ export const reportSchema = z.object({
     .max(1000, 'Description cannot exceed 1000 characters')
     .trim(),
   dateLostFound: z
-    .date({
-      required_error: 'Date is required',
-    })
+    .date({ required_error: 'Date is required' })
     .refine((date) => date <= new Date(), {
       message: 'Date cannot be in the future',
     }),
@@ -70,7 +68,10 @@ export const reportSchema = z.object({
     .or(z.literal('')),
   contactPhone: z
     .string()
-    .regex(/^[+]?[1-9][\d]{0,15}$/, 'Please provide a valid phone number')
+    .regex(
+      /^[+]?[\d\s\-()]{7,20}$/,
+      'Please provide a valid phone number (e.g., +91 9876543210 or 123-456-7890)'
+    )
     .trim()
     .optional()
     .or(z.literal('')),
@@ -91,10 +92,11 @@ export const messageSchema = z.object({
     .min(10, 'Message must be at least 10 characters')
     .max(1000, 'Message cannot exceed 1000 characters')
     .trim(),
-  messageType: z
-    .enum(['inquiry', 'match_notification', 'general', 'system'])
-    .default('inquiry'),
-  priority: z.enum(['low', 'normal', 'high']).default('normal'),
+  messageType: z.enum(['inquiry', 'match_notification', 'general', 'system']),
+  // ✅ Fixed
+  priority: z.enum(['low', 'normal', 'high'], {
+    required_error: 'Priority is required',
+  }),
 });
 
 export const userUpdateSchema = z.object({
@@ -112,6 +114,7 @@ export const userUpdateSchema = z.object({
     .optional(),
 });
 
+// ✅ Types
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type RegisterFormData = z.infer<typeof registerSchema>;
 export type ReportFormData = z.infer<typeof reportSchema>;

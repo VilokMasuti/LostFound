@@ -1,19 +1,18 @@
-'use client';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+"use client"
 
-import { Badge } from '@/components/ui/badge';
-import {
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { FuturisticButton } from '@/components/ui/futuristic-button';
-import { GlassCard } from '@/components/ui/glass-card';
-import { Separator } from '@/components/ui/separator';
-import { SkeletonCard } from '@/components/ui/skeleton-card';
-import type { Message } from '@/type';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from "react"
+import type { Message } from "@/type"
+import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { SkeletonCard } from "@/components/ui/skeleton-card"
+import { GlassCard } from "@/components/ui/glass-card"
+import { FuturisticButton } from "@/components/ui/futuristic-button"
 
+import { MessageCircle, Mail, MailOpen, Trash2, Sparkles, Eye, Phone } from "lucide-react"
+import { motion } from "framer-motion"
+import { toast } from "sonner"
+import { format } from "date-fns"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,86 +23,114 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { format } from 'date-fns';
-import { motion } from 'framer-motion';
-import { Mail, MailOpen, MessageCircle, Sparkles, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+} from "@/components/ui/alert-dialog"
+import Link from "next/link"
 
 export default function InboxPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [messages, setMessages] = useState<Message[]>([])
+  const [loading, setLoading] = useState(true)
+
 
   useEffect(() => {
-    fetchMessages();
-  }, []);
+    fetchMessages()
+  }, [])
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch('/api/messages');
+      const response = await fetch("/api/messages")
       if (response.ok) {
-        const data = await response.json();
-        setMessages(data);
+        const data = await response.json()
+        setMessages(data)
       } else {
-        toast.error('Failed to load messages');
+        toast.error("Failed to load messages")
       }
     } catch (error) {
-      console.error('Failed to fetch messages:', error);
-      toast.error('Failed to load messages');
+      console.error("Failed to fetch messages:", error)
+      toast.error("Failed to load messages")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const markAsRead = async (messageId: string) => {
     try {
       const response = await fetch(`/api/messages/${messageId}/read`, {
-        method: 'PATCH',
-      });
+        method: "PATCH",
+      })
 
       if (response.ok) {
-        setMessages(
-          messages.map((msg) =>
-            msg._id === messageId
-              ? { ...msg, read: true, readAt: new Date() }
-              : msg
-          )
-        );
-        toast.success('Message marked as read');
+        setMessages(messages.map((msg) => (msg._id === messageId ? { ...msg, read: true, readAt: new Date() } : msg)))
+        toast.success("Message marked as read")
       } else {
-        toast.error('Failed to mark message as read');
+        toast.error("Failed to mark message as read")
       }
     } catch (error) {
-      console.error('Failed to mark message as read:', error);
-      toast.error('Failed to mark message as read');
+      console.error("Failed to mark message as read:", error)
+      toast.error("Failed to mark message as read")
     }
-  };
+  }
 
   const deleteMessage = async (messageId: string) => {
     try {
       const response = await fetch(`/api/messages/${messageId}`, {
-        method: 'DELETE',
-      });
+        method: "DELETE",
+      })
 
       if (response.ok) {
-        setMessages(messages.filter((msg) => msg._id !== messageId));
-        toast.success('Message deleted successfully');
+        setMessages(messages.filter((msg) => msg._id !== messageId))
+        toast.success("Message deleted successfully")
       } else {
-        const error = await response.json();
-        toast.error(error.message || 'Failed to delete message');
+        const error = await response.json()
+        toast.error(error.message || "Failed to delete message")
       }
     } catch (error) {
-      console.error('Failed to delete message:', error);
-      toast.error('An error occurred while deleting the message');
+      console.error("Failed to delete message:", error)
+      toast.error("An error occurred while deleting the message")
     }
-  };
+  }
 
-  const unreadCount = messages.filter((msg) => !msg.read).length;
+  const sendReply = async (reportId: string, message: string) => {
+    try {
+      const response = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reportId,
+          message,
+          messageType: "reply",
+          priority: "normal",
+        }),
+      })
+
+      if (response.ok) {
+        fetchMessages() // Refresh messages
+      } else {
+        throw new Error("Failed to send reply")
+      }
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const unreadCount = messages.filter((msg) => !msg.read).length
+  const conversationGroups = messages.reduce(
+    (groups, message) => {
+      const key = message.reportId
+      if (!groups[key]) {
+        groups[key] = []
+      }
+      groups[key].push(message)
+      return groups
+    },
+    {} as Record<string, Message[]>,
+  )
 
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Animated Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-cyan-900 dark:to-blue-900" />
+
+
 
       <div className="container mx-auto px-4 py-24 relative z-10">
         <motion.div
@@ -121,9 +148,7 @@ export default function InboxPage() {
               </Badge>
             )}
           </h1>
-          <p className="text-xl text-muted-foreground">
-            Messages from other users about your reports
-          </p>
+          <p className="text-xl text-muted-foreground">Messages and conversations about your reports</p>
         </motion.div>
 
         {loading ? (
@@ -133,153 +158,125 @@ export default function InboxPage() {
             ))}
           </div>
         ) : messages.length > 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-6"
-          >
-            {messages.map((message, index) => (
-              <motion.div
-                key={message._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-              >
-                <GlassCard
-                  className={`${
-                    !message.read ? 'border-primary glow-primary' : ''
-                  }`}
-                  hover
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            {Object.entries(conversationGroups).map(([reportId, conversationMessages], index) => {
+              const latestMessage = conversationMessages[0]
+              const hasUnread = conversationMessages.some((msg) => !msg.read)
+
+              return (
+                <motion.div
+                  key={reportId}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2 flex-1">
-                        <CardTitle className="text-lg flex items-center gap-3">
-                          {message.read ? (
-                            <MailOpen className="h-5 w-5 text-muted-foreground" />
-                          ) : (
-                            <Mail className="h-5 w-5 text-primary" />
-                          )}
-                          <span>From: {message.from.name}</span>
-                          <span className="text-sm text-muted-foreground">
-                            ({message.from.email})
-                          </span>
-                          {!message.read && (
-                            <Badge variant="secondary" className="text-xs">
-                              <Sparkles className="w-3 h-3 mr-1" />
-                              New
-                            </Badge>
-                          )}
-                        </CardTitle>
+                  <GlassCard className={`${hasUnread ? "border-primary glow-primary" : ""}`} hover>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2 flex-1">
+                          <CardTitle className="text-lg flex items-center gap-3">
+                            {hasUnread ? (
+                              <Mail className="h-5 w-5 text-primary" />
+                            ) : (
+                              <MailOpen className="h-5 w-5 text-muted-foreground" />
+                            )}
+                            <span>
+                              Message about {latestMessage.report?.brand} {latestMessage.report?.color}
+                            </span>
+                            {hasUnread && (
+                              <Badge variant="secondary" className="text-xs">
+                                <Sparkles className="w-3 h-3 mr-1" />
+                                New
+                              </Badge>
+                            )}
+                          </CardTitle>
 
-                        {message.subject && (
-                          <CardDescription className="text-base font-medium">
-                            Subject: {message.subject}
+                          <CardDescription>
+                            From: {latestMessage.from.name} ({latestMessage.from.email}) •{" "}
+                            {format(new Date(latestMessage.createdAt), "MMM dd, yyyy 'at' h:mm a")}
                           </CardDescription>
-                        )}
 
-                        <CardDescription>
-                          About: {message.report?.brand} {message.report?.color}{' '}
-                          phone ({message.report?.type})
-                        </CardDescription>
-
-                        <p className="text-sm text-muted-foreground">
-                          {format(
-                            new Date(message.createdAt),
-                            "MMM dd, yyyy 'at' h:mm a"
-                          )}
-                        </p>
-                      </div>
-
-                      <div className="flex gap-2">
-                        {!message.read && (
-                          <FuturisticButton
-                            variant="outline"
-                            size="sm"
-                            onClick={() => markAsRead(message._id)}
-                          >
-                            Mark as Read
-                          </FuturisticButton>
-                        )}
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <FuturisticButton variant="outline" size="sm">
-                              <Trash2 className="h-4 w-4" />
-                            </FuturisticButton>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="glass-card">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Delete Message
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete this message?
-                                This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => deleteMessage(message._id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  <Separator />
-
-                  <CardContent className="pt-6">
-                    <div className="space-y-4">
-                      <div className="prose prose-sm max-w-none">
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                          {message.message}
-                        </p>
-                      </div>
-
-                      {(message.report?.contactEmail ||
-                        message.report?.contactPhone) && (
-                        <div className="p-4 glass rounded-lg">
-                          <p className="text-sm font-medium mb-2 flex items-center gap-2">
-                            <MessageCircle className="w-4 h-4" />
-                            Contact Information:
-                          </p>
-                          <div className="space-y-1">
-                            {message.report.contactEmail && (
-                              <p className="text-sm">
-                                Email:{' '}
-                                <a
-                                  href={`mailto:${message.report.contactEmail}`}
-                                  className="text-primary hover:text-primary/80 transition-colors font-medium"
-                                >
-                                  {message.report.contactEmail}
-                                </a>
-                              </p>
-                            )}
-                            {message.report.contactPhone && (
-                              <p className="text-sm">
-                                Phone:{' '}
-                                <a
-                                  href={`tel:${message.report.contactPhone}`}
-                                  className="text-primary hover:text-primary/80 transition-colors font-medium"
-                                >
-                                  {message.report.contactPhone}
-                                </a>
-                              </p>
-                            )}
+                          <div className="p-3 bg-muted/50 rounded-lg">
+                            <p className="text-sm font-medium mb-1">Message:</p>
+                            <p className="text-sm">{latestMessage.message}</p>
                           </div>
+
+                          {/* Report Context */}
+                          {latestMessage.report && (
+                            <div className="p-3 glass rounded-lg">
+                              <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                                <Phone className="w-4 h-4" />
+                                About this report:
+                              </p>
+                              <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div>
+                                  Type: <span className="font-medium capitalize">{latestMessage.report.type}</span>
+                                </div>
+                                <div>
+                                  Location: <span className="font-medium">{latestMessage.report.location}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </GlassCard>
-              </motion.div>
-            ))}
+
+                        <div className="flex gap-2">
+                          {latestMessage.report && (
+                            <Link href={`/reports/${latestMessage.report._id}`}>
+                              <FuturisticButton variant="outline" size="sm">
+                                <Eye className="h-4 w-4 mr-1" />
+                                View Report
+                              </FuturisticButton>
+                            </Link>
+                          )}
+
+                          {hasUnread && (
+                            <FuturisticButton
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                conversationMessages.forEach((msg) => {
+                                  if (!msg.read) markAsRead(msg._id)
+                                })
+                              }}
+                            >
+                              Mark Read
+                            </FuturisticButton>
+                          )}
+
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <FuturisticButton variant="outline" size="sm">
+                                <Trash2 className="h-4 w-4" />
+                              </FuturisticButton>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="glass-card">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Message</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this message? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => {
+                                    conversationMessages.forEach((msg) => deleteMessage(msg._id))
+                                  }}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    </CardHeader>
+                  </GlassCard>
+                </motion.div>
+              )
+            })}
           </motion.div>
         ) : (
           <GlassCard className="text-center py-16" glow>
@@ -291,13 +288,12 @@ export default function InboxPage() {
               <MessageCircle className="h-24 w-24 text-muted-foreground mx-auto mb-6" />
               <CardTitle className="text-2xl mb-4">No Messages Yet</CardTitle>
               <CardDescription className="text-lg max-w-md mx-auto">
-                When someone contacts you about your reports, their messages
-                will appear here.
+                When someone contacts you about your reports, their messages will appear here as conversations.
               </CardDescription>
             </motion.div>
           </GlassCard>
         )}
       </div>
     </div>
-  );
+  )
 }
