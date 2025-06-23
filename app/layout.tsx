@@ -1,5 +1,5 @@
 import { AuthProvider } from '@/context/AuthContext';
-import { ThemeProvider } from '@/context/ThemeContext';
+
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Inter } from 'next/font/google';
 import type React from 'react';
@@ -65,26 +65,24 @@ export default function RootLayout({
       >
         {' '}
         <ErrorBoundary>
-          <ThemeProvider>
-            <QueryProvider>
-              <AuthProvider>
-                <div className="min-h-screen bg-background flex flex-col">
-                  <ConditionalLayout>{children}</ConditionalLayout>
-                  <Toaster
-                    position="top-right"
-                    toastOptions={{
-                      className: 'glass-card',
-                      style: {
-                        background: 'var(--glass-bg)',
-                        backdropFilter: 'blur(20px)',
-                        border: '1px solid var(--glass-border)',
-                      },
-                    }}
-                  />
-                </div>
-              </AuthProvider>
-            </QueryProvider>
-          </ThemeProvider>
+          <QueryProvider>
+            <AuthProvider>
+              <div className="min-h-screen  flex flex-col">
+                <ConditionalLayout>{children}</ConditionalLayout>
+                <Toaster
+                  position="top-right"
+                  toastOptions={{
+                    className: 'glass-card',
+                    style: {
+                      background: 'var(--glass-bg)',
+                      backdropFilter: 'blur(20px)',
+                      border: '1px solid var(--glass-border)',
+                    },
+                  }}
+                />
+              </div>
+            </AuthProvider>
+          </QueryProvider>
         </ErrorBoundary>
       </body>
     </html>

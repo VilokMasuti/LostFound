@@ -1,234 +1,204 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { useAuth } from "@/context/AuthContext"
-import { useTheme } from "@/context/ThemeContext"
-import { FuturisticButton } from "@/components/ui/futuristic-button"
-import { Moon, Sun, Menu, X, Phone, MessageCircle, User, LogOut, Settings } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useAuth } from '@/context/AuthContext';
+import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
+import { LogOut, Menu, MessageCircle, User, X } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
+// Dropdown components (simplified version)
+const DropdownMenu = ({ children }: { children: React.ReactNode }) => (
+  <div className="relative">{children}</div>
+);
+
+const DropdownMenuTrigger = ({ children }: { children: React.ReactNode }) => (
+  <div>{children}</div>
+);
+
+const DropdownMenuContent = ({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <div
+    className={cn(
+      'absolute right-0 mt-2 w-48 rounded-lg shadow-xl z-50',
+      className
+    )}
+  >
+    {children}
+  </div>
+);
+
+const DropdownMenuItem = ({
+  children,
+  className,
+  onClick,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+}) => (
+  <div
+    onClick={onClick}
+    className={cn('px-4 py-2 text-sm flex items-center', className)}
+  >
+    {children}
+  </div>
+);
+
+const DropdownMenuSeparator = ({ className }: { className?: string }) => (
+  <div className={cn('h-px my-1', className)} />
+);
 
 export function Navbar() {
-  const { user, logout, loading } = useAuth()
-  const { theme, toggleTheme } = useTheme()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
+  const { user, logout, loading } = useAuth();
+  const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20)
-    }
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-  // Don't render anything while loading
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
+
+  // Navigation items
+  const navigation = [
+    { name: 'Browse Reports', href: '/reports' },
+    ...(user
+      ? [
+          { name: 'Submit Report', href: '/report' },
+          { name: 'Dashboard', href: '/dashboard' },
+          { name: 'Inbox', href: '/inbox', icon: MessageCircle },
+        ]
+      : []),
+  ];
+
   if (loading) {
     return (
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-transparent">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
-                <Phone className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                LostFormed
-              </span>
-            </Link>
-            <div className="w-20 h-8 bg-muted animate-pulse rounded" />
+      <motion.header
+        className="sticky top-0 z-50 w-full border-b border-gray-800 bg-gray-900/80 backdrop-blur-md"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="container flex h-16 items-center">
+          <div className="flex items-center space-x-2">
+            <div className="h-10 w-10 rounded-lg bg-gray-800 animate-pulse" />
+            <span className="font-bold text-transparent bg-gray-800 rounded animate-pulse">
+              LostFormed
+            </span>
           </div>
         </div>
-      </nav>
-    )
+      </motion.header>
+    );
   }
 
   return (
-    <motion.nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? "glass-card backdrop-blur-xl border-b border-white/10" : "bg-transparent"
-      }`}
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
+    <motion.header
+      className="sticky top-0 z-50 w-full border-b border-border/40 backdrop-blur supports-[backdrop-filter]:bg-background/60   bg-amber-100"
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
     >
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+      <div className="container flex h-14 max-w-screen-2xl items-center">
+        {/* Desktop Navigation */}
+        <div className="mr-4 hidden md:flex ">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 group">
+          <Link href="/" className="mr-6 flex items-center space-x-2 group">
             <motion.div
-              className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center"
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              transition={{ type: "spring", stiffness: 300 }}
+              whileHover={{ rotate: 180 }}
+              transition={{ duration: 0.3 }}
             >
-              <Phone className="w-5 h-5 text-white" />
+              <div className="h-10 w-10 flex items-center justify-center  backdrop-blur-sm">
+                <Image
+                  src="/LOGO-removebg-preview.png"
+                  alt="LostFormed Logo"
+                  width={36}
+                  height={36}
+                  className="filter brightness-125 contrast-110"
+                />
+              </div>
             </motion.div>
-            <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              LostFormed
-            </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
-            <Link href="/reports" className="text-foreground/80 hover:text-foreground transition-colors relative group">
-              Browse Reports
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 group-hover:w-full transition-all duration-300" />
-            </Link>
-
-            {user ? (
-              <>
-                <Link
-                  href="/report"
-                  className="text-foreground/80 hover:text-foreground transition-colors relative group"
-                >
-                  Submit Report
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 group-hover:w-full transition-all duration-300" />
-                </Link>
-
-                <Link
-                  href="/dashboard"
-                  className="text-foreground/80 hover:text-foreground transition-colors relative group"
-                >
-                  Dashboard
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 group-hover:w-full transition-all duration-300" />
-                </Link>
-
-                <Link
-                  href="/inbox"
-                  className="text-foreground/80 hover:text-foreground transition-colors relative group"
-                >
-                  <MessageCircle className="w-4 h-4 inline mr-1" />
-                  Inbox
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 group-hover:w-full transition-all duration-300" />
-                </Link>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <FuturisticButton variant="glass" size="icon">
-                      <User className="w-4 h-4" />
-                    </FuturisticButton>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="glass-card border-white/10">
-                    <DropdownMenuItem>
-                      <User className="w-4 h-4 mr-2" />
-                      Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Settings className="w-4 h-4 mr-2" />
-                      Settings
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={logout}>
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Logout
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            ) : (
-              <>
-                <Link href="/login">
-                  <FuturisticButton variant="ghost">Login</FuturisticButton>
-                </Link>
-                <Link href="/register">
-                  <FuturisticButton variant="glow">Register</FuturisticButton>
-                </Link>
-              </>
-            )}
-
-            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <FuturisticButton variant="glass" size="icon" onClick={toggleTheme}>
-                <AnimatePresence mode="wait">
-                  {theme === "light" ? (
-                    <motion.div
-                      key="moon"
-                      initial={{ rotate: -90, opacity: 0 }}
-                      animate={{ rotate: 0, opacity: 1 }}
-                      exit={{ rotate: 90, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Moon className="w-4 h-4" />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="sun"
-                      initial={{ rotate: 90, opacity: 0 }}
-                      animate={{ rotate: 0, opacity: 1 }}
-                      exit={{ rotate: -90, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Sun className="w-4 h-4" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </FuturisticButton>
-            </motion.div>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center space-x-2">
-            <FuturisticButton variant="glass" size="icon" onClick={toggleTheme}>
-              {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-            </FuturisticButton>
-            <FuturisticButton variant="glass" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-              <AnimatePresence mode="wait">
-                {isMenuOpen ? (
-                  <motion.div
-                    key="close"
-                    initial={{ rotate: -90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    exit={{ rotate: 90, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <X className="w-4 h-4" />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="menu"
-                    initial={{ rotate: 90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    exit={{ rotate: -90, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Menu className="w-4 h-4" />
-                  </motion.div>
+          {/* Desktop Navigation Links */}
+          <nav className="flex items-center gap-6 text-sm">
+            {navigation.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'relative flex items-center transition-colors hover:text-foreground/80 focus-ring rounded-sm px-2 py-1',
+                  pathname === item.href
+                    ? 'text-foreground'
+                    : 'text-foreground/60'
                 )}
-              </AnimatePresence>
-            </FuturisticButton>
-          </div>
+              >
+                {item.icon && <item.icon className="h-4 w-4 mr-2" />}
+                {item.name}
+                {pathname === item.href && (
+                  <motion.div
+                    className="absolute -bottom-1 left-0 right-0 h-0.5 bg-foreground"
+                    layoutId="activeTab"
+                    initial={false}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  />
+                )}
+              </Link>
+            ))}
+          </nav>
         </div>
 
         {/* Mobile Menu */}
-        <AnimatePresence>
-          {isMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="md:hidden border-t border-white/10 glass"
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              className="mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
             >
-              <div className="py-4 space-y-2">
-                {[
-                  { href: "/reports", label: "Browse Reports" },
-                  ...(user
-                    ? [
-                        { href: "/report", label: "Submit Report" },
-                        { href: "/dashboard", label: "Dashboard" },
-                        { href: "/inbox", label: "Inbox" },
-                      ]
-                    : [
-                        { href: "/login", label: "Login" },
-                        { href: "/register", label: "Register" },
-                      ]),
-                ].map((item, index) => (
+              {isOpen ? (
+                <X className="h-5 w-5 text-foreground" />
+              ) : (
+                <Menu className="h-5 w-5 text-foreground" />
+              )}
+              <span className="sr-only">Toggle Menu</span>
+            </Button>
+          </SheetTrigger>
+
+          <SheetContent side="left" className="pr-0 bg-background">
+            {/* Mobile Logo */}
+            <Link
+              href="/"
+              className="flex items-center space-x-2"
+              onClick={() => setIsOpen(false)}
+            >
+              <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-gray-900/50 border border-gray-800">
+                <Image
+                  src="/LOGO-removebg-preview.png"
+                  alt="LostFormed Logo"
+                  width={36}
+                  height={36}
+                  className="filter brightness-125 contrast-110"
+                />
+              </div>
+            </Link>
+
+            {/* Mobile Navigation Links */}
+            <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6 overflow-y-auto">
+              <div className="flex flex-col space-y-3">
+                {navigation.map((item, index) => (
                   <motion.div
                     key={item.href}
                     initial={{ opacity: 0, x: -20 }}
@@ -237,36 +207,144 @@ export function Navbar() {
                   >
                     <Link
                       href={item.href}
-                      className="block px-4 py-3 text-foreground/80 hover:text-foreground hover:bg-white/5 rounded-lg transition-all duration-200"
-                      onClick={() => setIsMenuOpen(false)}
+                      onClick={() => setIsOpen(false)}
+                      className={cn(
+                        'flex items-center transition-colors hover:text-foreground/80 focus-ring rounded-sm px-2 py-1',
+                        pathname === item.href
+                          ? 'text-foreground font-medium'
+                          : 'text-foreground/60'
+                      )}
                     >
-                      {item.label}
+                      {item.icon && <item.icon className="h-4 w-4 mr-2" />}
+                      {item.name}
                     </Link>
                   </motion.div>
                 ))}
 
-                {user && (
+                {/* Auth links */}
+                {user ? (
                   <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 }}
+                    transition={{ delay: navigation.length * 0.1 }}
                   >
                     <button
-                      onClick={() => {
-                        logout()
-                        setIsMenuOpen(false)
-                      }}
-                      className="block w-full text-left px-4 py-3 text-foreground/80 hover:text-foreground hover:bg-white/5 rounded-lg transition-all duration-200"
+                      onClick={() => logout()}
+                      className="flex items-center w-full text-left transition-colors hover:text-foreground/80 focus-ring rounded-sm px-2 py-1 text-foreground/60"
                     >
+                      <LogOut className="h-4 w-4 mr-2" />
                       Logout
                     </button>
                   </motion.div>
+                ) : (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: navigation.length * 0.1 }}
+                    >
+                      <Link
+                        href="/login"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center transition-colors hover:text-foreground/80 focus-ring rounded-sm px-2 py-1 text-foreground/60"
+                      >
+                        Login
+                      </Link>
+                    </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: (navigation.length + 1) * 0.1 }}
+                    >
+                      <Link
+                        href="/register"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center transition-colors hover:text-foreground/80 focus-ring rounded-sm px-2 py-1 text-foreground/60"
+                      >
+                        Register
+                      </Link>
+                    </motion.div>
+                  </>
                 )}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Right Side - Logo (Mobile) and User Actions */}
+        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+          {/* Mobile Logo */}
+          <div className="w-full flex-1 md:w-auto md:flex-none">
+            <Link href="/" className="flex items-center space-x-2 md:hidden">
+              <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-gray-900/50 border border-gray-800">
+                <Image
+                  src="/LOGO-removebg-preview.png"
+                  alt="LostFormed Logo"
+                  width={28}
+                  height={28}
+                  className="filter brightness-125 contrast-110"
+                />
+              </div>
+              <span className="font-bold bg-gradient-to-r from-gray-200 to-gray-400 bg-clip-text text-transparent">
+                LostFormed
+              </span>
+            </Link>
+          </div>
+
+          {/* User Actions */}
+          <nav className="flex items-center">
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="h-8 w-8 rounded-full p-0 bg-background border border-border"
+                  >
+                    {user.photoURL ? (
+                      <Image
+                        src={user.photoURL}
+                        alt="Profile"
+                        width={32}
+                        height={32}
+                        className="rounded-full"
+                      />
+                    ) : (
+                      <User className="h-4 w-4 text-foreground" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-background border border-border shadow-xl">
+                  <DropdownMenuItem className="focus:bg-accent cursor-pointer">
+                    <User className="w-4 h-4 mr-2" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={logout}
+                    className="focus:bg-accent cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="hidden md:flex gap-2">
+                <Link href="/login">
+                  <Button variant="outline" className="border-border">
+                    Login
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+                    Register
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </nav>
+        </div>
       </div>
-    </motion.nav>
-  )
+    </motion.header>
+  );
 }

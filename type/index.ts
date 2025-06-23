@@ -1,4 +1,6 @@
 export interface User {
+  [x: string]: string | StaticImport;
+  [x: string]: any;
   _id: string;
   name: string;
   email: string;

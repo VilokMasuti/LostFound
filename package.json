@@ -38,6 +38,8 @@
     "dlx": "^0.2.1",
     "form": "^0.2.5",
     "framer-motion": "^12.18.1",
+    "gsap": "^3.13.0",
+    "install": "^0.13.0",
     "jose": "^6.0.11",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.518.0",

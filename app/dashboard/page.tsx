@@ -1,20 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import type { Report, Match } from "@/type"
-import { useAuth } from "@/context/AuthContext"
-import { ReportCard } from "@/components/ReportCard"
-import { SkeletonCard } from "@/components/ui/skeleton-card"
-import { GlassCard } from "@/components/ui/glass-card"
-import { FuturisticButton } from "@/components/ui/futuristic-button"
-import { FloatingParticles } from "@/components/ui/floating-particles"
-import { MatchStatusBanner } from "@/components/match-status-banner"
-import { StatusTimeline } from "@/components/status-timeline"
-import { NoMatchBanner } from "@/components/no-match-banner"
-import { MatchDetailDialog } from "@/components/MatchDetailDialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
+import { MatchStatusBanner } from '@/components/match-status-banner';
+import { MatchDetailDialog } from '@/components/MatchDetailDialog';
+import { NoMatchBanner } from '@/components/no-match-banner';
+import { ReportCard } from '@/components/ReportCard';
+import { StatusTimeline } from '@/components/status-timeline';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,185 +16,221 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Phone, Search, TrendingUp, Users, MessageCircle, Plus, Eye, Sparkles, CheckCircle, Trash2 } from "lucide-react"
-import { motion } from "framer-motion"
-import { toast } from "sonner"
-import Link from "next/link"
-import { format } from "date-fns"
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { FloatingParticles } from '@/components/ui/floating-particles';
+import { FuturisticButton } from '@/components/ui/futuristic-button';
+import { GlassCard } from '@/components/ui/glass-card';
+import { SkeletonCard } from '@/components/ui/skeleton-card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/context/AuthContext';
+import type { Match, Report } from '@/type';
+import { format } from 'date-fns';
+import { motion } from 'framer-motion';
+import {
+  CheckCircle,
+  Eye,
+  MessageCircle,
+  Phone,
+  Plus,
+  Search,
+  Sparkles,
+  Trash2,
+  TrendingUp,
+  Users,
+} from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function DashboardPage() {
-  const { user } = useAuth()
-  const [reports, setReports] = useState<Report[]>([])
-  const [matches, setMatches] = useState<Match[]>([])
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("active")
+  const { user } = useAuth();
+  const [reports, setReports] = useState<Report[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('active');
   const [stats, setStats] = useState({
     totalReports: 0,
     lostReports: 0,
     foundReports: 0,
     matches: 0,
     unreadMessages: 0,
-  })
+  });
 
   useEffect(() => {
     if (user) {
-      console.log("👤 Dashboard loading for user:", user.name)
-      fetchAllData()
+      console.log('👤 Dashboard loading for user:', user.name);
+      fetchAllData();
     }
-  }, [user])
+  }, [user]);
 
   const fetchAllData = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      await Promise.all([fetchUserReports(), fetchUserStats(), fetchUserMatches()])
+      await Promise.all([
+        fetchUserReports(),
+        fetchUserStats(),
+        fetchUserMatches(),
+      ]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const fetchUserReports = async () => {
     try {
-      console.log("📊 Fetching user reports...")
-      const response = await fetch("/api/report/user")
+      console.log('📊 Fetching user reports...');
+      const response = await fetch('/api/report/user');
       if (response.ok) {
-        const data = await response.json()
-        console.log("✅ Reports loaded:", data.length)
-        setReports(data)
+        const data = await response.json();
+        console.log('✅ Reports loaded:', data.length);
+        setReports(data);
       } else {
-        console.error("❌ Failed to fetch reports:", response.statusText)
-        toast.error("Failed to load your reports")
+        console.error('❌ Failed to fetch reports:', response.statusText);
+        toast.error('Failed to load your reports');
       }
     } catch (error) {
-      console.error("❌ Network error fetching reports:", error)
-      toast.error("Failed to load your reports")
+      console.error('❌ Network error fetching reports:', error);
+      toast.error('Failed to load your reports');
     }
-  }
+  };
 
   const fetchUserStats = async () => {
     try {
-      console.log("📈 Fetching user stats...")
-      const response = await fetch("/api/report/stats")
+      console.log('📈 Fetching user stats...');
+      const response = await fetch('/api/report/stats');
       if (response.ok) {
-        const data = await response.json()
-        console.log("✅ Stats loaded:", data)
-        setStats(data)
+        const data = await response.json();
+        console.log('✅ Stats loaded:', data);
+        setStats(data);
       }
     } catch (error) {
-      console.error("❌ Failed to fetch stats:", error)
+      console.error('❌ Failed to fetch stats:', error);
     }
-  }
+  };
 
   const fetchUserMatches = async () => {
     try {
-      console.log("🎯 Fetching user matches...")
-      const response = await fetch("/api/matches")
+      console.log('🎯 Fetching user matches...');
+      const response = await fetch('/api/matches');
       if (response.ok) {
-        const data = await response.json()
-        console.log("✅ Matches loaded:", data.length)
-        setMatches(data)
+        const data = await response.json();
+        console.log('✅ Matches loaded:', data.length);
+        setMatches(data);
       } else {
-        console.error("❌ Failed to fetch matches:", response.statusText)
+        console.error('❌ Failed to fetch matches:', response.statusText);
       }
     } catch (error) {
-      console.error("❌ Network error fetching matches:", error)
+      console.error('❌ Network error fetching matches:', error);
     }
-  }
+  };
 
   const handleDeleteReport = async (reportId: string) => {
     try {
-      console.log("🗑️ Deleting report:", reportId)
+      console.log('🗑️ Deleting report:', reportId);
       const response = await fetch(`/api/report/${reportId}`, {
-        method: "DELETE",
-      })
+        method: 'DELETE',
+      });
 
       if (response.ok) {
-        console.log("✅ Report deleted successfully")
-        setReports(reports.filter((r) => r._id !== reportId))
-        toast.success("Report deleted successfully")
-        fetchUserStats()
+        console.log('✅ Report deleted successfully');
+        setReports(reports.filter((r) => r._id !== reportId));
+        toast.success('Report deleted successfully');
+        fetchUserStats();
       } else {
-        const error = await response.json()
-        console.error("❌ Failed to delete report:", error)
-        toast.error(error.message || "Failed to delete report")
+        const error = await response.json();
+        console.error('❌ Failed to delete report:', error);
+        toast.error(error.message || 'Failed to delete report');
       }
     } catch (error) {
-      console.error("❌ Network error deleting report:", error)
-      toast.error("An error occurred while deleting the report")
+      console.error('❌ Network error deleting report:', error);
+      toast.error('An error occurred while deleting the report');
     }
-  }
+  };
 
   const handleMatchUpdate = () => {
-    console.log("🔄 Match updated, refreshing data...")
-    fetchAllData()
-  }
+    console.log('🔄 Match updated, refreshing data...');
+    fetchAllData();
+  };
 
   const handleNotifyMe = () => {
-    toast.success("🔔 We'll notify you as soon as we find a match!")
-  }
+    toast.success("🔔 We'll notify you as soon as we find a match!");
+  };
 
   const statCards = [
     {
-      title: "Total Reports",
+      title: 'Total Reports',
       value: stats.totalReports,
       description: "Reports you've submitted",
       icon: Phone,
-      color: "from-blue-500 to-cyan-500",
+      color: 'from-blue-500 to-cyan-500',
       delay: 0.1,
     },
     {
-      title: "Lost Reports",
+      title: 'Lost Reports',
       value: stats.lostReports,
       description: "Phones you've lost",
       icon: Search,
-      color: "from-red-500 to-pink-500",
+      color: 'from-red-500 to-pink-500',
       delay: 0.2,
     },
     {
-      title: "Found Reports",
+      title: 'Found Reports',
       value: stats.foundReports,
       description: "Phones you've found",
       icon: Users,
-      color: "from-green-500 to-emerald-500",
+      color: 'from-green-500 to-emerald-500',
       delay: 0.3,
     },
     {
-      title: "Matches Found",
+      title: 'Matches Found',
       value: stats.matches,
-      description: "Potential matches discovered",
+      description: 'Potential matches discovered',
       icon: TrendingUp,
-      color: "from-purple-500 to-violet-500",
+      color: 'from-purple-500 to-violet-500',
       delay: 0.4,
     },
     {
-      title: "Unread Messages",
+      title: 'Unread Messages',
       value: stats.unreadMessages,
-      description: "New messages in inbox",
+      description: 'New messages in inbox',
       icon: MessageCircle,
-      color: "from-orange-500 to-red-500",
+      color: 'from-orange-500 to-red-500',
       delay: 0.5,
     },
-  ]
+  ];
 
-  const activeReports = reports.filter((r) => r.status === "active")
-  const resolvedReports = reports.filter((r) => r.status === "resolved")
-  const pendingMatches = matches.filter((m) => m.status === "pending")
-  const confirmedMatches = matches.filter((m) => m.status === "confirmed")
+  const activeReports = reports.filter((r) => r.status === 'active');
+  const resolvedReports = reports.filter((r) => r.status === 'resolved');
+  const pendingMatches = matches.filter((m) => m.status === 'pending');
+  const confirmedMatches = matches.filter((m) => m.status === 'confirmed');
   const reportsWithoutMatches = activeReports.filter(
-    (report) => !matches.some((match) => match.reportId === report._id || match.matchedReportId === report._id),
-  )
+    (report) =>
+      !matches.some(
+        (match) =>
+          match.reportId === report._id || match.matchedReportId === report._id
+      )
+  );
 
-  const getReportStatus = (report: Report): "searching" | "matched" | "resolved" => {
-    if (report.status === "resolved") return "resolved"
+  const getReportStatus = (
+    report: Report
+  ): 'searching' | 'matched' | 'resolved' => {
+    if (report.status === 'resolved') return 'resolved';
 
-    const reportMatches = matches.filter((m) => m.reportId === report._id || m.matchedReportId === report._id)
+    const reportMatches = matches.filter(
+      (m) => m.reportId === report._id || m.matchedReportId === report._id
+    );
 
-    if (reportMatches.some((m) => m.status === "confirmed" || m.status === "pending")) {
-      return "matched"
+    if (
+      reportMatches.some(
+        (m) => m.status === 'confirmed' || m.status === 'pending'
+      )
+    ) {
+      return 'matched';
     }
 
-    return "searching"
-  }
+    return 'searching';
+  };
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -225,7 +252,9 @@ export default function DashboardPage() {
             <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
               Welcome Back, {user?.name}!
             </h1>
-            <p className="text-xl text-muted-foreground">Manage your reports and track your activity</p>
+            <p className="text-xl text-muted-foreground">
+              Manage your reports and track your activity
+            </p>
           </div>
         </motion.div>
 
@@ -240,9 +269,15 @@ export default function DashboardPage() {
             <MatchStatusBanner
               type="match_found"
               title="🎯 Great news! We've found a possible match."
-              message={`We found ${pendingMatches.length} potential match${pendingMatches.length > 1 ? "es" : ""} for your reports. Review ${pendingMatches.length > 1 ? "them" : "it"} now to confirm if ${pendingMatches.length > 1 ? "any are" : "it's"} your phone.`}
+              message={`We found ${pendingMatches.length} potential match${
+                pendingMatches.length > 1 ? 'es' : ''
+              } for your reports. Review ${
+                pendingMatches.length > 1 ? 'them' : 'it'
+              } now to confirm if ${
+                pendingMatches.length > 1 ? 'any are' : "it's"
+              } your phone.`}
               actionLabel="Review Matches"
-              onAction={() => setActiveTab("matches")}
+              onAction={() => setActiveTab('matches')}
             />
           </motion.div>
         )}
@@ -259,7 +294,7 @@ export default function DashboardPage() {
               title="✅ This issue has been resolved!"
               message={`Congratulations! ${confirmedMatches.length} of your reports have been successfully matched and resolved. Thank you for using LostFormed!`}
               actionLabel="View Resolved"
-              onAction={() => setActiveTab("resolved")}
+              onAction={() => setActiveTab('resolved')}
             />
           </motion.div>
         )}
@@ -272,7 +307,10 @@ export default function DashboardPage() {
             transition={{ duration: 0.6 }}
             className="mb-8"
           >
-            <NoMatchBanner reportType={reportsWithoutMatches[0]?.type || "lost"} onNotifyMe={handleNotifyMe} />
+            <NoMatchBanner
+              reportType={reportsWithoutMatches[0]?.type || 'lost'}
+              onNotifyMe={handleNotifyMe}
+            />
           </motion.div>
         )}
 
@@ -289,13 +327,15 @@ export default function DashboardPage() {
                 <motion.div
                   className={`w-16 h-16 rounded-full bg-gradient-to-r ${stat.color} flex items-center justify-center mx-auto mb-4`}
                   whileHover={{ scale: 1.1, rotate: 5 }}
-                  transition={{ type: "spring", stiffness: 300 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
                 >
                   <stat.icon className="w-8 h-8 text-white" />
                 </motion.div>
                 <div className="text-3xl font-bold mb-2">{stat.value}</div>
                 <div className="text-sm font-medium mb-1">{stat.title}</div>
-                <div className="text-xs text-muted-foreground">{stat.description}</div>
+                <div className="text-xs text-muted-foreground">
+                  {stat.description}
+                </div>
               </GlassCard>
             </motion.div>
           ))}
@@ -318,11 +358,17 @@ export default function DashboardPage() {
                 <div key={report._id} className="space-y-4">
                   <div className="text-center mb-6">
                     <h3 className="text-lg font-medium">
-                      {report.brand} {report.color} - {report.type === "lost" ? "Lost" : "Found"}
+                      {report.brand} {report.color} -{' '}
+                      {report.type === 'lost' ? 'Lost' : 'Found'}
                     </h3>
-                    <p className="text-sm text-muted-foreground">Track your report progress</p>
+                    <p className="text-sm text-muted-foreground">
+                      Track your report progress
+                    </p>
                   </div>
-                  <StatusTimeline currentStatus={getReportStatus(report)} type={report.type} />
+                  <StatusTimeline
+                    currentStatus={getReportStatus(report)}
+                    type={report.type}
+                  />
                 </div>
               ))}
             </GlassCard>
@@ -343,19 +389,28 @@ export default function DashboardPage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Link href="/report">
-                <FuturisticButton variant="glow" className="w-full h-16 text-lg group">
+                <FuturisticButton
+                  variant="glow"
+                  className="w-full h-16 text-lg group"
+                >
                   <Plus className="w-5 h-5 mr-2 group-hover:rotate-90 transition-transform" />
                   Submit New Report
                 </FuturisticButton>
               </Link>
               <Link href="/reports">
-                <FuturisticButton variant="glass" className="w-full h-16 text-lg">
+                <FuturisticButton
+                  variant="glass"
+                  className="w-full h-16 text-lg"
+                >
                   <Eye className="w-5 h-5 mr-2" />
                   Browse All Reports
                 </FuturisticButton>
               </Link>
               <Link href="/inbox">
-                <FuturisticButton variant="outline" className="w-full h-16 text-lg relative">
+                <FuturisticButton
+                  variant="outline"
+                  className="w-full h-16 text-lg relative"
+                >
                   <MessageCircle className="w-5 h-5 mr-2" />
                   View Inbox
                   {stats.unreadMessages > 0 && (
@@ -405,29 +460,37 @@ export default function DashboardPage() {
                         <div className="flex items-start justify-between mb-4">
                           <div>
                             <h3 className="text-lg font-semibold mb-2">
-                              Match for {
-                                reports.find(r => r._id === match.reportId)?.brand ||
-                                reports.find(r => r._id === match.matchedReportId)?.brand
-                              }{" "}
-                              {
-                                reports.find(r => r._id === match.reportId)?.color ||
-                                reports.find(r => r._id === match.matchedReportId)?.color
-                              }
+                              Match for{' '}
+                              {reports.find((r) => r._id === match.reportId)
+                                ?.brand ||
+                                reports.find(
+                                  (r) => r._id === match.matchedReportId
+                                )?.brand}{' '}
+                              {reports.find((r) => r._id === match.reportId)
+                                ?.color ||
+                                reports.find(
+                                  (r) => r._id === match.matchedReportId
+                                )?.color}
                             </h3>
                             <p className="text-sm text-muted-foreground">
-                              Confidence: {match.confidence} • Similarity: {Math.round(match.similarity * 100)}%
+                              Confidence: {match.confidence} • Similarity:{' '}
+                              {Math.round(match.similarity * 100)}%
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              Found on {format(new Date(match.createdAt), "MMM dd, yyyy 'at' h:mm a")}
+                              Found on{' '}
+                              {format(
+                                new Date(match.createdAt),
+                                "MMM dd, yyyy 'at' h:mm a"
+                              )}
                             </p>
                           </div>
                           <Badge
                             className={
-                              match.status === "confirmed"
-                                ? "bg-green-500 text-white"
-                                : match.status === "pending"
-                                  ? "bg-yellow-500 text-white"
-                                  : "bg-red-500 text-white"
+                              match.status === 'confirmed'
+                                ? 'bg-green-500 text-white'
+                                : match.status === 'pending'
+                                ? 'bg-yellow-500 text-white'
+                                : 'bg-red-500 text-white'
                             }
                           >
                             {match.status.toUpperCase()}
@@ -441,7 +504,9 @@ export default function DashboardPage() {
                             trigger={
                               <FuturisticButton variant="glow" size="sm">
                                 <Eye className="w-4 h-4 mr-1" />
-                                {match.status === "pending" ? "Review Match" : "View Details"}
+                                {match.status === 'pending'
+                                  ? 'Review Match'
+                                  : 'View Details'}
                               </FuturisticButton>
                             }
                           />
@@ -460,8 +525,8 @@ export default function DashboardPage() {
                     <Search className="h-24 w-24 text-muted-foreground mx-auto mb-6" />
                     <h3 className="text-2xl font-bold mb-4">No Matches Yet</h3>
                     <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                      🔍 No match yet, but we&apos;re still looking... Check back soon or we&apos;ll notify you when we find a
-                      match!
+                      🔍 No match yet, but we&apos;re still looking... Check
+                      back soon or we&apos;ll notify you when we find a match!
                     </p>
                   </motion.div>
                 </GlassCard>
@@ -488,24 +553,35 @@ export default function DashboardPage() {
                         <ReportCard
                           report={report}
                           showActions={false}
-                          matches={matches.filter((m) => m.reportId === report._id || m.matchedReportId === report._id)}
+                          matches={matches.filter(
+                            (m) =>
+                              m.reportId === report._id ||
+                              m.matchedReportId === report._id
+                          )}
                           isOwner={true}
                         />
 
                         {/* Delete Button */}
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <FuturisticButton variant="outline" className="w-full" size="sm">
+                            <FuturisticButton
+                              variant="outline"
+                              className="w-full"
+                              size="sm"
+                            >
                               <Trash2 className="w-4 h-4 mr-2" />
                               Delete Report
                             </FuturisticButton>
                           </AlertDialogTrigger>
                           <AlertDialogContent className="glass-card">
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Report?</AlertDialogTitle>
+                              <AlertDialogTitle>
+                                Delete Report?
+                              </AlertDialogTitle>
                               <AlertDialogDescription>
-                                This will permanently delete your {report.type} phone report for {report.brand}{" "}
-                                {report.color}. This action cannot be undone.
+                                This will permanently delete your {report.type}{' '}
+                                phone report for {report.brand} {report.color}.
+                                This action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -531,9 +607,12 @@ export default function DashboardPage() {
                     transition={{ duration: 0.6 }}
                   >
                     <Phone className="h-24 w-24 text-muted-foreground mx-auto mb-6" />
-                    <h3 className="text-2xl font-bold mb-4">No Active Reports</h3>
+                    <h3 className="text-2xl font-bold mb-4">
+                      No Active Reports
+                    </h3>
                     <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                      You don&apos;t have any active reports. Submit a report to get started.
+                      You don&apos;t have any active reports. Submit a report to
+                      get started.
                     </p>
                     <Link href="/report">
                       <FuturisticButton variant="glow" size="lg">
@@ -549,7 +628,11 @@ export default function DashboardPage() {
             <TabsContent value="resolved">
               {resolvedReports.length > 0 ? (
                 <div className="space-y-6">
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-6"
+                  >
                     <GlassCard
                       className="p-6 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
                       glow
@@ -561,7 +644,8 @@ export default function DashboardPage() {
                             ✅ Cases Successfully Resolved!
                           </h3>
                           <p className="text-green-700 dark:text-green-300">
-                            Congratulations! These phones have been successfully returned to their owners.
+                            Congratulations! These phones have been successfully
+                            returned to their owners.
                           </p>
                         </div>
                       </div>
@@ -589,9 +673,12 @@ export default function DashboardPage() {
                     transition={{ duration: 0.6 }}
                   >
                     <CheckCircle className="h-24 w-24 text-muted-foreground mx-auto mb-6" />
-                    <h3 className="text-2xl font-bold mb-4">No Resolved Cases</h3>
+                    <h3 className="text-2xl font-bold mb-4">
+                      No Resolved Cases
+                    </h3>
                     <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                      Once you confirm matches and resolve cases, they&lsquo;ll appear here as success stories.
+                      Once you confirm matches and resolve cases, they&lsquo;ll
+                      appear here as success stories.
                     </p>
                   </motion.div>
                 </GlassCard>
@@ -617,7 +704,11 @@ export default function DashboardPage() {
                       <ReportCard
                         report={report}
                         showActions={false}
-                        matches={matches.filter((m) => m.reportId === report._id || m.matchedReportId === report._id)}
+                        matches={matches.filter(
+                          (m) =>
+                            m.reportId === report._id ||
+                            m.matchedReportId === report._id
+                        )}
                         isOwner={true}
                       />
                     </motion.div>
@@ -633,7 +724,8 @@ export default function DashboardPage() {
                     <Phone className="h-24 w-24 text-muted-foreground mx-auto mb-6" />
                     <h3 className="text-2xl font-bold mb-4">No Reports Yet</h3>
                     <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                      You haven&apos;t submitted any reports yet. Get started by reporting a lost or found phone.
+                      You haven&apos;t submitted any reports yet. Get started by
+                      reporting a lost or found phone.
                     </p>
                     <Link href="/report">
                       <FuturisticButton variant="glow" size="lg">
@@ -649,5 +741,5 @@ export default function DashboardPage() {
         </motion.div>
       </div>
     </div>
-  )
+  );
 }
