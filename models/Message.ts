@@ -55,12 +55,20 @@ const MessageSchema = new mongoose.Schema(
     messageType: {
       type: String,
       enum: {
-        values: ['inquiry', 'match_notification', 'general', 'system'],
+        values: [
+          'inquiry',
+          'match_notification',
+          'general',
+          'system',
+          'found_notification',
+          'match_contact', // <-- Add this
+          'quick_contact', // ✅ ADD THIS
+           'contact_owner', // ✅ add this
+        ],
         message:
-          'Message type must be inquiry, match_notification, general, or system',
+          'Message type must be inquiry, match_notification, general, system, or found_notification',
       },
       default: 'inquiry',
-
     },
     priority: {
       type: String,
@@ -69,7 +77,6 @@ const MessageSchema = new mongoose.Schema(
         message: 'Priority must be low, normal, or high',
       },
       default: 'normal',
-
     },
     attachments: [
       {

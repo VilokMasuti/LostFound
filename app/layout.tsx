@@ -1,34 +1,45 @@
-import { AuthProvider } from '@/context/AuthContext';
-
-import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Inter } from 'next/font/google';
-import type React from 'react';
-import './globals.css';
-
 import { ConditionalLayout } from '@/components/ConditionalLayout';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { AuthProvider } from '@/context/AuthContext';
 import { QueryProvider } from '@/context/QueryProvider';
+import type { Metadata } from 'next';
+import { Inter, Outfit, Poppins } from 'next/font/google';
+import type React from 'react';
 import { Toaster } from 'sonner';
+import './globals.css';
 
+// Modern font combinations
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
+  display: 'swap',
 });
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const poppins = Poppins({
   subsets: ['latin'],
+  variable: '--font-poppins',
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
+  display: 'swap',
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const outfit = Outfit({
   subsets: ['latin'],
+  variable: '--font-outfit',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: 'LostFormed - Lost & Found Phone Reporting System',
+  title: 'ReConnect- Lost & Found Phone Reporting System',
   description:
     'Report lost or found phones and find matches automatically with our AI-powered system',
+  icons: {
+    icon: [
+      { url: '/LOGO-removebg-preview.png', sizes: '32x32', type: 'image/png' },
+      { url: '/LOGO-removebg-preview.png', sizes: '16x16', type: 'image/png' },
+    ],
+    shortcut: '/LOGO-removebg-preview.png',
+    apple: '/LOGO-removebg-preview.png',
+  },
   keywords:
     'lost phone, found phone, phone recovery, lost and found, phone matching',
   authors: [{ name: 'LostFormed Team' }],
@@ -43,6 +54,14 @@ export const metadata: Metadata = {
     description:
       'Report lost or found phones and find matches automatically with our AI-powered system',
     siteName: 'LostFormed',
+    images: [
+      {
+        url: '/LOGO-removebg-preview.png',
+        width: 1200,
+        height: 630,
+        alt: 'LostFormed Logo',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
@@ -50,6 +69,7 @@ export const metadata: Metadata = {
     description:
       'Report lost or found phones and find matches automatically with our AI-powered system',
     creator: '@lostformed',
+    images: ['/LOGO-removebg-preview.png'],
   },
 };
 
@@ -60,23 +80,44 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body
-        className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} font-sans`}
+        className={`${inter.variable} ${poppins.variable} ${outfit.variable} font-poppins antialiased`}
+        style={{
+          fontFeatureSettings: '"cv11", "ss01"',
+          fontVariationSettings: '"opsz" 32',
+        }}
       >
-        {' '}
         <ErrorBoundary>
           <QueryProvider>
             <AuthProvider>
-              <div className="min-h-screen  flex flex-col">
+              <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex flex-col">
                 <ConditionalLayout>{children}</ConditionalLayout>
                 <Toaster
                   position="top-right"
+                  expand={true}
+                  richColors
+                  closeButton
                   toastOptions={{
-                    className: 'glass-card',
+                    className: 'modern-toast',
                     style: {
-                      background: 'var(--glass-bg)',
+                      background: 'rgba(0, 0, 0, 0.95)',
                       backdropFilter: 'blur(20px)',
-                      border: '1px solid var(--glass-border)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '12px',
+                      color: 'white',
+                      fontFamily: 'var(--font-poppins)',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      boxShadow:
+                        '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)',
                     },
                   }}
                 />

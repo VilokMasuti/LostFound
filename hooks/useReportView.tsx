@@ -8,7 +8,7 @@ export function useReportView(reportId: string | undefined) {
 
     const recordView = async () => {
       try {
-        await fetch(`/api/reports/${reportId}/view`, {
+        await fetch(`/api/report/${reportId}/view`, {
           method: 'POST',
         });
       } catch (error) {

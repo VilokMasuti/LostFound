@@ -1,36 +1,78 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import type { Report } from "@/type"
-import { GlassCard } from "@/components/ui/glass-card"
-import { FuturisticButton } from "@/components/ui/futuristic-button"
-import { FloatingParticles } from "@/components/ui/floating-particles"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import { SimpleMessageDialog } from "@/components/SimpleMessageDialog"
-import { Phone, MapPin, Calendar, User, Mail, ArrowLeft, CheckCircle, AlertCircle, Eye, Sparkles } from "lucide-react"
-import { motion } from "framer-motion"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { CustomMessageDialog } from "@/components/CustomMessageDialog"
+import {
+  Phone,
+  MapPin,
+  Calendar,
+  ArrowLeft,
+  CheckCircle,
+  AlertCircle,
+  Eye,
+  Loader2,
+  Bell,
+  MessageCircle,
+  Plus,
+  Sparkles,
+  User,
+} from "lucide-react"
 import { format } from "date-fns"
 import { toast } from "sonner"
-import { useReportRole } from "@/hooks/useUserRole"
-import { useReportView } from "@/hooks/useReportView"
+import { useAuth } from "@/context/AuthContext"
 import Image from "next/image"
+import Link from "next/link"
+import { motion, AnimatePresence } from "framer-motion"
+
+// Custom hooks for better organization
+function useReportRole(report: Report | null, user: any) {
+  if (!report || !user) {
+    return { role: "anonymous", isOwner: false, isFinder: false }
+  }
+
+  const isOwner = report.user?._id === user._id || report.userId === user._id
+  const isFinder = !isOwner && user._id // Logged in but not owner
+
+  return {
+    role: isOwner ? "owner" : isFinder ? "finder" : "anonymous",
+    isOwner,
+    isFinder,
+  }
+}
+
+function useReportView(reportId: string) {
+  useEffect(() => {
+    if (reportId) {
+      // Track view count
+      fetch(`/api/report/${reportId}/view`, { method: "POST" }).catch(console.error)
+    }
+  }, [reportId])
+}
 
 export default function ReportDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
+
+  // State management
   const [report, setReport] = useState<Report | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [viewCount, setViewCount] = useState(0)
+  const [resolving, setResolving] = useState(false)
+  const [messageSent, setMessageSent] = useState(false)
 
-  const reportRole = useReportRole(report)
-
-  // Record view when component mounts
+  const reportRole = useReportRole(report, user)
   useReportView(params.id as string)
 
+  // Fetch report data with improved error handling
   useEffect(() => {
     if (params.id) {
       fetchReport(params.id as string)
@@ -39,337 +81,528 @@ export default function ReportDetailPage() {
 
   const fetchReport = async (id: string) => {
     try {
+      setLoading(true)
+      setError(null)
+
       const response = await fetch(`/api/report/${id}`)
-      if (response.ok) {
-        const data = await response.json()
-        setReport(data)
-        setViewCount(data.viewCount || 0)
-      } else {
-        setError("Report not found")
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Report not found")
+        } else if (response.status === 403) {
+          throw new Error("Access denied")
+        } else {
+          throw new Error(`Error ${response.status}: Failed to load report`)
+        }
       }
+
+      const data = await response.json()
+      setReport(data)
     } catch (error) {
       console.error("Failed to fetch report:", error)
-      setError("Failed to load report")
+      const errorMessage = error instanceof Error ? error.message : "Failed to load report"
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleFoundThis = () => {
-    if (reportRole.role === "anonymous") {
-      toast.error("Please log in to report a match")
-      router.push("/login")
-      return
-    }
+  const handleMarkResolved = async () => {
+    if (!report || !reportRole.isOwner) return
 
-    toast.success("Great! Please send a message to the owner with details about where you found it.")
+    const confirmed = confirm("Are you sure you want to mark this phone as returned? This action cannot be undone.")
+    if (!confirmed) return
+
+    setResolving(true)
+
+    try {
+      const response = await fetch(`/api/report/${report._id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: "resolved",
+          resolvedAt: new Date().toISOString(),
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || errorData.message || "Failed to update report")
+      }
+
+      toast.success("🎉 Phone marked as returned!", {
+        description: "Case has been resolved successfully. Redirecting to dashboard...",
+        duration: 4000,
+        style: {
+          background: "#111111",
+          color: "#FFFFFF",
+          border: "1px solid #333333",
+        },
+      })
+
+      // Update local state
+      setReport((prev) => (prev ? { ...prev, status: "resolved" } : null))
+
+      // Redirect to dashboard after a delay
+      setTimeout(() => {
+        router.push("/dashboard?tab=resolved")
+      }, 2000)
+    } catch (error) {
+      console.error("Error marking as resolved:", error)
+      const errorMessage = error instanceof Error ? error.message : "Failed to mark as resolved"
+
+      toast.error(errorMessage, {
+        style: {
+          background: "#111111",
+          color: "#FFFFFF",
+          border: "1px solid #333333",
+        },
+      })
+    } finally {
+      setResolving(false)
+    }
   }
 
-  if (loading) {
+  const handleMessageSent = () => {
+    setMessageSent(true)
+    toast.success("Message sent successfully! 📨", {
+      description: "The owner will receive your message and contact details.",
+      duration: 4000,
+      style: {
+        background: "#111111",
+        color: "#FFFFFF",
+        border: "1px solid #333333",
+      },
+    })
+  }
+
+  // Loading state
+  if (loading || authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+            className="mb-6"
+          >
+            <Loader2 className="h-16 w-16 text-white mx-auto" />
+          </motion.div>
+          <p className="text-white text-xl">Loading report details...</p>
+        </motion.div>
       </div>
     )
   }
 
+  // Error state
   if (error || !report) {
     return (
-      <div className="min-h-screen relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 dark:from-gray-900 dark:via-red-900 dark:to-orange-900" />
-        <FloatingParticles count={20} />
-
-        <div className="container mx-auto px-4 py-24 relative z-10">
-          <GlassCard className="text-center py-16 max-w-2xl mx-auto" glow>
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.6 }}
-            >
-              <AlertCircle className="h-24 w-24 text-destructive mx-auto mb-6" />
-              <h2 className="text-2xl font-bold mb-4">Report Not Found</h2>
-              <p className="text-muted-foreground mb-8">
-                The report you&apos;re looking for doesn&apos;t exist or has been removed.
-              </p>
-              <FuturisticButton onClick={() => router.push("/reports")} variant="glow">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Reports
-              </FuturisticButton>
-            </motion.div>
-          </GlassCard>
+      <div className="min-h-screen bg-black">
+        <div className="container py-24">
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto">
+            <Card className="bg-gradient-to-br from-gray-900/50 to-black/80 border-white/20 backdrop-blur-sm shadow-xl">
+              <CardContent className="py-20 text-center">
+                <AlertCircle className="h-24 w-24 text-red-400 mx-auto mb-6" />
+                <h2 className="text-3xl font-bold mb-4 text-white">
+                  {error?.includes("not found") ? "Report Not Found" : "Error Loading Report"}
+                </h2>
+                <p className="text-white/70 text-lg mb-8 max-w-md mx-auto">
+                  {error || "The report you're looking for doesn't exist or has been removed."}
+                </p>
+                <div className="flex gap-4 justify-center">
+                  <Button onClick={() => router.push("/reports")} className="bg-white text-black hover:bg-white/90">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Browse Reports
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => fetchReport(params.id as string)}
+                    className="border-white/20 text-white hover:bg-white hover:text-black"
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       </div>
     )
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "resolved":
-        return "bg-green-500"
-      case "active":
-        return "bg-blue-500"
-      case "expired":
-        return "bg-gray-500"
-      default:
-        return "bg-blue-500"
-    }
-  }
-
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900" />
-
-      {/* Floating Particles */}
-      <FloatingParticles count={30} />
-
-      <div className="container mx-auto px-4 py-24 relative z-10">
+    <div className="min-h-screen bg-black">
+      <div className="container py-8">
         {/* Back Button */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-8"
-        >
-          <FuturisticButton variant="ghost" onClick={() => router.back()}>
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mb-8">
+          <Button variant="ghost" onClick={() => router.back()} className="text-white hover:bg-white/10">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Reports
-          </FuturisticButton>
+          </Button>
         </motion.div>
 
         <div className="max-w-4xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-            <GlassCard className="overflow-hidden" glow>
-              {/* Header */}
-              <div className="p-8 pb-6">
+          {/* Status Banner */}
+          <AnimatePresence>
+            {report.status === "resolved" && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mb-8"
+              >
+                <Alert className="border-green-400/30 bg-green-900/20 backdrop-blur-sm shadow-xl">
+                  <CheckCircle className="h-5 w-5 text-green-400" />
+                  <AlertDescription className="text-green-200 flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    <strong>Success! This phone has been returned to its owner!</strong>
+                  </AlertDescription>
+                </Alert>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <Card className="bg-gradient-to-br from-gray-900/50 to-black/80 border-white/20 backdrop-blur-sm shadow-2xl">
+              <CardHeader className="pb-6">
                 <div className="flex items-start justify-between mb-6">
-                  <div>
-                    <h1 className="text-3xl font-bold mb-2">
+                  <div className="flex-1">
+                    <CardTitle className="text-3xl sm:text-4xl mb-4 text-white font-bold">
                       {report.brand} {report.model && `${report.model} `}- {report.color}
-                    </h1>
-                    <div className="flex items-center gap-4">
-                      <Badge variant={report.type === "lost" ? "destructive" : "default"} className="text-sm px-3 py-1">
+                    </CardTitle>
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <Badge
+                        variant={report.type === "lost" ? "destructive" : "default"}
+                        className={
+                          report.type === "lost"
+                            ? "bg-red-500/20 text-red-300 border-red-400/30"
+                            : "bg-green-500/20 text-green-300 border-green-400/30"
+                        }
+                      >
                         {report.type.toUpperCase()}
                       </Badge>
-                      <Badge className={`${getStatusColor(report.status)} text-white text-sm px-3 py-1`}>
+                      <Badge
+                        variant={report.status === "resolved" ? "default" : "secondary"}
+                        className={
+                          report.status === "resolved"
+                            ? "bg-green-500/20 text-green-300 border-green-400/30"
+                            : "bg-yellow-500/20 text-yellow-300 border-yellow-400/30"
+                        }
+                      >
                         {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
                       </Badge>
-                      <span className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Eye className="w-3 h-3" />
-                        {viewCount} views
-                      </span>
+                      <div className="flex items-center gap-2 text-sm text-white/60">
+                        <Eye className="w-4 h-4" />
+                        {report.viewCount || 0} views
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-white/60">
+                        <Calendar className="w-4 h-4" />
+                        {format(new Date(report.dateLostFound), "MMM dd, yyyy")}
+                      </div>
                     </div>
                   </div>
                 </div>
+              </CardHeader>
 
-                {/* Status Banner for Resolved Reports */}
-                {report.status === "resolved" && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-green-500 text-white p-4 rounded-lg mb-6 flex items-center gap-2"
-                  >
-                    <CheckCircle className="w-5 h-5" />
-                    <span className="font-medium">
-                      ✅ Great news! This phone has been successfully returned to its owner!
-                    </span>
-                  </motion.div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-8 pt-0">
-                {/* Image Section */}
-                <div className="space-y-4">
-                  {report.imageUrl ? (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.6 }}
-                      className="relative aspect-square rounded-xl overflow-hidden bg-muted"
-                    >
-                      <Image
-                        src={report.imageUrl || "/placeholder.svg"}
-                        alt={`${report.brand} ${report.color} phone`}
-                        fill
-                        className="object-cover"
-                        priority
-                      />
-                    </motion.div>
-                  ) : (
-                    <div className="aspect-square rounded-xl bg-muted flex items-center justify-center">
-                      <div className="text-center">
-                        <Phone className="w-16 h-16 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-muted-foreground">No image available</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Details Section */}
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                      <Phone className="w-5 h-5 text-primary" />
-                      Device Details
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Brand:</span>
-                        <span className="font-medium">{report.brand}</span>
-                      </div>
-                      {report.model && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Model:</span>
-                          <span className="font-medium">{report.model}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Color:</span>
-                        <span className="font-medium">{report.color}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Priority:</span>
-                        <Badge variant="outline" className="capitalize">
-                          {report.priority}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                      <MapPin className="w-5 h-5 text-primary" />
-                      Location & Date
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-muted-foreground mt-1" />
-                        <div>
-                          <p className="font-medium">{report.location}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {report.type === "lost" ? "Last seen here" : "Found at this location"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">{format(new Date(report.dateLostFound), "MMMM dd, yyyy")}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {report.type === "lost" ? "Date lost" : "Date found"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <h3 className="text-xl font-semibold mb-4">Description</h3>
-                    <p className="text-muted-foreground leading-relaxed">{report.description}</p>
-                  </div>
-
-                  {/* Contact Information - Role-based visibility */}
-                  {reportRole.role === "finder" && (report.contactEmail || report.contactPhone) && (
-                    <>
-                      <Separator />
-                      <div>
-                        <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                          <User className="w-5 h-5 text-primary" />
-                          Contact Information
-                        </h3>
-                        <div className="space-y-2">
-                          {report.contactEmail && (
-                            <div className="flex items-center gap-2">
-                              <Mail className="w-4 h-4 text-muted-foreground" />
-                              <a href={`mailto:${report.contactEmail}`} className="text-primary hover:underline">
-                                Send Email
-                              </a>
-                            </div>
-                          )}
-                          {report.contactPhone && (
-                            <div className="flex items-center gap-2">
-                              <Phone className="w-4 h-4 text-muted-foreground" />
-                              <span className="font-medium">{report.contactPhone}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Action Buttons - Role-based rendering */}
-              {report.status === "active" && (
-                <div className="p-8 pt-0">
-                  <Separator className="mb-6" />
-                  <div className="flex gap-4 justify-center">
-                    {reportRole.role === "finder" ? (
-                      <>
-                        <FuturisticButton
-                          variant="glow"
-                          size="lg"
-                          onClick={handleFoundThis}
-                          className="flex-1 max-w-xs"
-                        >
-                          <Sparkles className="w-5 h-5 mr-2" />
-                          {report.type === "lost" ? "I Found This Phone!" : "This Is My Phone!"}
-                        </FuturisticButton>
-                        {reportRole.canMessage && (
-                          <SimpleMessageDialog
-                            report={report}
-                            defaultMessage={`Hi! I ${report.type === "lost" ? "found" : "lost"} a phone that matches your description. Please contact me so we can arrange the return.`}
-                            trigger={
-                              <FuturisticButton variant="outline" size="lg" className="flex-1 max-w-xs">
-                                <Mail className="w-5 h-5 mr-2" />
-                                Send Message
-                              </FuturisticButton>
-                            }
-                          />
-                        )}
-                      </>
-                    ) : reportRole.role === "owner" ? (
-                      <div className="text-center">
-                        <p className="text-muted-foreground mb-4">This is your report</p>
-                        <FuturisticButton variant="outline" onClick={() => router.push("/dashboard")}>
-                          <ArrowLeft className="w-4 h-4 mr-2" />
-                          Back to Dashboard
-                        </FuturisticButton>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Image Section */}
+                  <div className="space-y-4">
+                    {report.imageUrl ? (
+                      <div className="relative aspect-square rounded-xl overflow-hidden bg-black/50 border border-white/10">
+                        <Image
+                          src={report.imageUrl || "/placeholder.svg"}
+                          alt={`${report.brand} ${report.color} phone`}
+                          fill
+                          className="object-cover"
+                          priority
+                        />
                       </div>
                     ) : (
-                      <div className="text-center">
-                        <p className="text-muted-foreground mb-4">Please log in to contact the owner</p>
-                        <FuturisticButton variant="glow" onClick={() => router.push("/login")}>
-                          Log In to Help
-                        </FuturisticButton>
+                      <div className="aspect-square rounded-xl bg-gradient-to-br from-gray-800/50 to-black/80 border border-white/10 flex items-center justify-center">
+                        <div className="text-center">
+                          <Phone className="w-20 h-20 text-white/30 mx-auto mb-4" />
+                          <p className="text-white/50 text-lg">No image available</p>
+                        </div>
                       </div>
                     )}
                   </div>
-                </div>
-              )}
 
-              {/* Resolved Status */}
-              {report.status === "resolved" && (
-                <div className="p-8 pt-0">
-                  <Separator className="mb-6" />
-                  <div className="text-center">
-                    <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">Phone Successfully Returned!</h3>
-                    <p className="text-muted-foreground mb-6">
-                      This case has been resolved. Thank you to everyone who helped!
-                    </p>
-                    <FuturisticButton variant="outline" onClick={() => router.push("/reports")}>
-                      <ArrowLeft className="w-4 h-4 mr-2" />
-                      Browse More Reports
-                    </FuturisticButton>
+                  {/* Details Section */}
+                  <div className="space-y-6">
+                    {/* Device Details Card */}
+                    <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-3 text-white">
+                          <Phone className="w-5 h-5 text-blue-400" />
+                          Device Details
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-white/60">Brand:</span>
+                          <span className="font-medium text-white">{report.brand}</span>
+                        </div>
+                        {report.model && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-white/60">Model:</span>
+                            <span className="font-medium text-white">{report.model}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between items-center">
+                          <span className="text-white/60">Color:</span>
+                          <span className="font-medium text-white">{report.color}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Location & Date Card */}
+                    <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-3 text-white">
+                          <MapPin className="w-5 h-5 text-green-400" />
+                          Location & Date
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-start gap-3">
+                          <MapPin className="w-5 h-5 text-white/60 mt-1" />
+                          <div>
+                            <p className="font-medium text-white">{report.location}</p>
+                            <p className="text-sm text-white/60">
+                              {report.type === "lost" ? "Last seen here" : "Found at this location"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Calendar className="w-5 h-5 text-white/60" />
+                          <div>
+                            <p className="font-medium text-white">
+                              {format(new Date(report.dateLostFound), "MMMM dd, yyyy")}
+                            </p>
+                            <p className="text-sm text-white/60">
+                              {report.type === "lost" ? "Date lost" : "Date found"}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Owner Information Card */}
+                    <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-3 text-white">
+                          <User className="w-5 h-5 text-purple-400" />
+                          Owner Information
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-white/60">
+                          {report.type === "lost" ? "Lost by" : "Found by"}:{" "}
+                          <span className="font-medium text-white">
+                            {report.user?.name || "Anonymous"}
+                          </span>
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    {/* Description Card */}
+                    <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+                      <CardHeader>
+                        <CardTitle className="text-white">Description</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-white/70 leading-relaxed">
+                          {report.description || "No additional description provided."}
+                        </p>
+                      </CardContent>
+                    </Card>
                   </div>
                 </div>
-              )}
-            </GlassCard>
+
+                {/* Action Section */}
+                {report.status === "active" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="mt-12"
+                  >
+                    <Separator className="mb-8 bg-white/10" />
+
+                    {/* Anonymous User */}
+                    {reportRole.role === "anonymous" && (
+                      <div className="text-center space-y-6">
+                        <Alert className="border-blue-400/30 bg-blue-900/20 backdrop-blur-sm">
+                          <Bell className="h-5 w-5 text-blue-400" />
+                          <AlertDescription className="text-blue-200">
+                            Please log in to help return this phone to its owner.
+                          </AlertDescription>
+                        </Alert>
+                        <Button
+                          onClick={() => router.push("/login")}
+                          size="lg"
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          Log In to Help
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Owner */}
+                    {reportRole.isOwner && (
+                      <div className="text-center space-y-6">
+                        <Alert className="border-green-400/30 bg-green-900/20 backdrop-blur-sm">
+                          <CheckCircle className="h-5 w-5 text-green-400" />
+                          <AlertDescription className="text-green-200">
+                            This is your report. When someone finds your phone and submits a found phone report, you&apos;ll
+                            get notified and can contact them.
+                          </AlertDescription>
+                        </Alert>
+                        <div className="flex gap-4 justify-center">
+                          <Button
+                            variant="outline"
+                            onClick={() => router.push("/dashboard")}
+                            className="border-white/20 text-white hover:bg-white hover:text-black"
+                          >
+                            <ArrowLeft className="w-4 h-4 mr-2" />
+                            Back to Dashboard
+                          </Button>
+                          <Button
+                            onClick={handleMarkResolved}
+                            disabled={resolving}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            {resolving ? (
+                              <>
+                                <motion.div
+                                  animate={{ rotate: 360 }}
+                                  transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                                  className="mr-2"
+                                >
+                                  <Loader2 className="w-4 h-4" />
+                                </motion.div>
+                                Resolving...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Mark as Returned
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Finder - Enhanced Options */}
+                    {reportRole.isFinder && (
+                      <div className="text-center space-y-8">
+                        <Alert className="border-yellow-400/30 bg-yellow-900/20 backdrop-blur-sm">
+                          <Bell className="h-5 w-5 text-yellow-400" />
+                          <AlertDescription className="text-yellow-200">
+                            <strong>Found this phone?</strong> You have two options to help return it to its owner.
+                          </AlertDescription>
+                        </Alert>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                          {/* Primary Action - Submit Report */}
+                          <motion.div whileHover={{ scale: 1.02, y: -4 }} className="relative">
+                            <Card className="p-6 border-2 border-blue-400/30 bg-gradient-to-br from-blue-900/20 to-black/60 backdrop-blur-sm">
+                              <div className="text-center space-y-4">
+                                <div className="p-3 rounded-full bg-blue-500/20 w-fit mx-auto">
+                                  <Plus className="h-8 w-8 text-blue-400" />
+                                </div>
+                                <h4 className="font-bold text-white text-lg">Submit Found Phone Report</h4>
+                                <p className="text-white/70">
+                                  Fill out a detailed form with photos. The owner will be automatically notified and
+                                  matched.
+                                </p>
+                                <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                                  <Link href={`/report?type=found&reference=${report._id}`}>
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Submit Report
+                                  </Link>
+                                </Button>
+                              </div>
+                            </Card>
+                          </motion.div>
+
+                          {/* Secondary Action - Send Message */}
+                          <motion.div whileHover={{ scale: 1.02, y: -4 }} className="relative">
+                            <Card className="p-6 border border-white/20 bg-gradient-to-br from-gray-900/50 to-black/80 backdrop-blur-sm">
+                              <div className="text-center space-y-4">
+                                <div className="p-3 rounded-full bg-white/10 w-fit mx-auto">
+                                  <MessageCircle className="h-8 w-8 text-white/70" />
+                                </div>
+                                <h4 className="font-bold text-white text-lg">Send Quick Message</h4>
+                                <p className="text-white/70">
+                                  Send a direct message to the owner with your contact information.
+                                </p>
+
+                                {messageSent ? (
+                                  <Button disabled className="w-full bg-green-600/50 text-green-200 cursor-not-allowed">
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                    Message Sent ✓
+                                  </Button>
+                                ) : (
+                                  <CustomMessageDialog
+                                    report={report}
+                                    onMessageSent={handleMessageSent}
+                                    trigger={
+                                      <Button
+                                        variant="outline"
+                                        className="w-full border-white/20 text-white hover:bg-white hover:text-black bg-transparent"
+                                      >
+                                        <MessageCircle className="w-4 h-4 mr-2" />
+                                        Contact Owner
+                                      </Button>
+                                    }
+                                  />
+                                )}
+                              </div>
+                            </Card>
+                          </motion.div>
+                        </div>
+
+                        <div className="p-4 bg-white/5 rounded-xl border border-white/10 max-w-md mx-auto">
+                          <p className="text-sm text-white/60">
+                            <strong className="text-blue-400">💡 Tip:</strong> Submitting a found phone report provides
+                            better matching and automatic notifications, but a quick message works too!
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
+                {/* Resolved Status */}
+                {report.status === "resolved" && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-12">
+                    <Separator className="mb-8 bg-white/10" />
+                    <div className="text-center space-y-6">
+                      <div className="p-8 bg-gradient-to-br from-green-900/20 to-black/60 rounded-xl border border-green-400/30">
+                        <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
+                        <h3 className="text-2xl font-bold mb-3 text-white">Phone Successfully Returned!</h3>
+                        <p className="text-white/70 text-lg mb-6">
+                          This case has been resolved. Thank you to everyone who helped!
+                        </p>
+                        <Button
+                          variant="outline"
+                          onClick={() => router.push("/reports")}
+                          className="border-white/20 text-white hover:bg-white hover:text-black"
+                        >
+                          <ArrowLeft className="w-4 h-4 mr-2" />
+                          Browse More Reports
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </CardContent>
+            </Card>
           </motion.div>
         </div>
       </div>

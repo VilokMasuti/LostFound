@@ -3,6 +3,7 @@ import type { Types } from "mongoose"
 
 // Base interfaces for API responses
 export interface APIUser {
+  id: any
   _id: string
   name: string
   email: string

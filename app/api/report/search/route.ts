@@ -1,19 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import connectDB from '@/lib/mongodb';
-import Reports from '@/models/Report';
+import Report from '@/models/Report';
 import type { Types } from 'mongoose';
 import { type NextRequest, NextResponse } from 'next/server';
 
-// Define interface for populated report
 interface PopulatedReportSearch {
   _id: Types.ObjectId;
-  userId: {
-    _id: Types.ObjectId;
-    name: string;
-    email: string;
-  };
+  userId:
+    | {
+        _id: Types.ObjectId;
+        name: string;
+        email: string;
+      }
+    | Types.ObjectId;
   type: string;
   brand: string;
+  model?: string;
   color: string;
   location: string;
   description: string;
@@ -24,86 +26,95 @@ interface PopulatedReportSearch {
   status: string;
   createdAt: Date;
   updatedAt: Date;
+  viewCount?: number;
 }
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔍 GET /api/report/search - Searching reports');
+
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get('q');
+    const search = searchParams.get('search');
     const type = searchParams.get('type');
-    const brand = searchParams.get('brand');
-    const color = searchParams.get('color');
-    const location = searchParams.get('location');
+    const status = searchParams.get('status');
+    const limit = Number.parseInt(searchParams.get('limit') || '50');
     const page = Number.parseInt(searchParams.get('page') || '1');
-    const limit = Number.parseInt(searchParams.get('limit') || '20');
 
     await connectDB();
 
-    // Build search query
-    const searchQuery: any = { status: 'active' };
+    const searchQuery: any = {};
 
-    if (query) {
-      searchQuery.$text = { $search: query };
+    if (search && search.trim()) {
+      const searchRegex = { $regex: search.trim(), $options: 'i' };
+      searchQuery.$or = [
+        { brand: searchRegex },
+        { model: searchRegex },
+        { color: searchRegex },
+        { location: searchRegex },
+        { description: searchRegex },
+      ];
     }
 
-    if (type && ['lost', 'found'].includes(type)) {
+    if (type && type !== 'all') {
       searchQuery.type = type;
     }
 
-    if (brand) {
-      searchQuery.brand = new RegExp(brand, 'i');
+    if (status && status !== 'all') {
+      searchQuery.status = status;
     }
 
-    if (color) {
-      searchQuery.color = new RegExp(color, 'i');
-    }
+    console.log('🔍 Search query:', JSON.stringify(searchQuery));
 
-    if (location) {
-      searchQuery.location = new RegExp(location, 'i');
-    }
-
-    // Execute search with pagination
     const skip = (page - 1) * limit;
     const [reports, total] = await Promise.all([
-      Reports.find(searchQuery)
+      Report.find(searchQuery)
         .populate('userId', 'name email')
-        .sort(query ? { score: { $meta: 'textScore' } } : { createdAt: -1 })
+        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean() as unknown as Promise<PopulatedReportSearch[]>,
-      Reports.countDocuments(searchQuery),
+      Report.countDocuments(searchQuery),
     ]);
 
-    // Transform the data
-    const transformedReports = reports.map(
-      (report: {
-        _id: { toString: () => any };
-        userId: { _id: { toString: () => any }; name: any; email: any };
-      }) => ({
+    console.log(`✅ Found ${reports.length} reports (${total} total)`);
+
+    const transformedReports = reports.map((report) => {
+      const isUserPopulated =
+        typeof report.userId === 'object' && 'name' in report.userId;
+
+      const user = isUserPopulated
+        ? {
+            _id: (report.userId as any)._id.toString(),
+            name: (report.userId as any).name || 'User',
+            email: (report.userId as any).email || 'no-reply@example.com',
+          }
+        : {
+            _id: '',
+            name: 'Unknown',
+            email: 'unknown@example.com',
+          };
+
+      return {
         ...report,
         _id: report._id.toString(),
-        userId: report.userId._id.toString(),
-        user: {
-          _id: report.userId._id.toString(),
-          name: report.userId.name,
-          email: report.userId.email,
-        },
-      })
-    );
-
-    return NextResponse.json({
-      reports: transformedReports,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
-      },
+        userId: isUserPopulated
+          ? (report.userId as any)._id.toString()
+          : report.userId.toString(),
+        dateLostFound: report.dateLostFound.toISOString(),
+        createdAt: report.createdAt.toISOString(),
+        updatedAt: report.updatedAt.toISOString(),
+        user,
+      };
     });
+
+    return NextResponse.json(transformedReports);
   } catch (error) {
-    console.error('Search reports error:', error);
+    console.error('❌ Search reports error:', error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      {
+        message: 'Internal server error',
+        error: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }

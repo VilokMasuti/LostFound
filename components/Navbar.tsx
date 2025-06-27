@@ -1,350 +1,237 @@
 'use client';
 
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/context/AuthContext';
-import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
-import { LogOut, Menu, MessageCircle, User, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  CircleDashed,
+  LogOut,
+  Menu,
+  MessageCircle,
+  Phone,
+  Search,
+  Settings,
+  User,
+  X,
+} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
-
-// Dropdown components (simplified version)
-const DropdownMenu = ({ children }: { children: React.ReactNode }) => (
-  <div className="relative">{children}</div>
-);
-
-const DropdownMenuTrigger = ({ children }: { children: React.ReactNode }) => (
-  <div>{children}</div>
-);
-
-const DropdownMenuContent = ({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => (
-  <div
-    className={cn(
-      'absolute right-0 mt-2 w-48 rounded-lg shadow-xl z-50',
-      className
-    )}
-  >
-    {children}
-  </div>
-);
-
-const DropdownMenuItem = ({
-  children,
-  className,
-  onClick,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  onClick?: () => void;
-}) => (
-  <div
-    onClick={onClick}
-    className={cn('px-4 py-2 text-sm flex items-center', className)}
-  >
-    {children}
-  </div>
-);
-
-const DropdownMenuSeparator = ({ className }: { className?: string }) => (
-  <div className={cn('h-px my-1', className)} />
-);
-
+import { useState } from 'react';
 export function Navbar() {
-  const { user, logout, loading } = useAuth();
-  const pathname = usePathname();
+  const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const toggleMenu = () => setIsOpen(!isOpen);
 
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
-
-  // Navigation items
-  const navigation = [
-    { name: 'Browse Reports', href: '/reports' },
+  const navItems = [
+    { href: '/', label: 'Home', icon: Phone },
+    { href: '/reports', label: 'Browse', icon: Search },
+    { href: '/report', label: 'Report', icon: Phone },
+    { href: '/dashboard', label: 'Dashboard', icon: CircleDashed },
     ...(user
-      ? [
-          { name: 'Submit Report', href: '/report' },
-          { name: 'Dashboard', href: '/dashboard' },
-          { name: 'Inbox', href: '/inbox', icon: MessageCircle },
-        ]
+      ? [{ href: '/inbox', label: 'Messages', icon: MessageCircle }]
       : []),
   ];
 
-  if (loading) {
-    return (
-      <motion.header
-        className="sticky top-0 z-50 w-full border-b border-gray-800 bg-gray-900/80 backdrop-blur-md"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <div className="container flex h-16 items-center">
-          <div className="flex items-center space-x-2">
-            <div className="h-10 w-10 rounded-lg bg-gray-800 animate-pulse" />
-            <span className="font-bold text-transparent bg-gray-800 rounded animate-pulse">
-              LostFormed
-            </span>
-          </div>
-        </div>
-      </motion.header>
-    );
-  }
-
   return (
-    <motion.header
-      className="sticky top-0 z-50 w-full border-b border-border/40 backdrop-blur supports-[backdrop-filter]:bg-background/60   bg-amber-100"
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="container flex h-14 max-w-screen-2xl items-center">
-        {/* Desktop Navigation */}
-        <div className="mr-4 hidden md:flex ">
+    <nav className="sticky top-0 z-50 bg-black/95 backdrop-blur-sm border-b border-white/10">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="mr-6 flex items-center space-x-2 group">
-            <motion.div
-              whileHover={{ rotate: 180 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="h-10 w-10 flex items-center justify-center  backdrop-blur-sm">
-                <Image
-                  src="/LOGO-removebg-preview.png"
-                  alt="LostFormed Logo"
-                  width={36}
-                  height={36}
-                  className="filter brightness-125 contrast-110"
-                />
-              </div>
-            </motion.div>
+          <Link href="/" className="flex items-center space-x-2">
+            <Image
+              src="/public/bglogo-removebg-preview.png"
+              alt="LostFormed Logo"
+              width={40}
+              height={40}
+              className="h-20 w-20"
+            />
           </Link>
 
-          {/* Desktop Navigation Links */}
-          <nav className="flex items-center gap-6 text-sm">
-            {navigation.map((item) => (
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={cn(
-                  'relative flex items-center transition-colors hover:text-foreground/80 focus-ring rounded-sm px-2 py-1',
-                  pathname === item.href
-                    ? 'text-foreground'
-                    : 'text-foreground/60'
-                )}
+                className="text-white/80 hover:text-white transition-colors duration-200 flex items-center space-x-1"
               >
-                {item.icon && <item.icon className="h-4 w-4 mr-2" />}
-                {item.name}
-                {pathname === item.href && (
-                  <motion.div
-                    className="absolute -bottom-1 left-0 right-0 h-0.5 bg-foreground"
-                    layoutId="activeTab"
-                    initial={false}
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  />
-                )}
+                <item.icon className="h-4 w-4" />
+                <span>{item.label}</span>
               </Link>
             ))}
-          </nav>
-        </div>
-
-        {/* Mobile Menu */}
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger asChild>
-            <Button
-              variant="ghost"
-              className="mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
-            >
-              {isOpen ? (
-                <X className="h-5 w-5 text-foreground" />
-              ) : (
-                <Menu className="h-5 w-5 text-foreground" />
-              )}
-              <span className="sr-only">Toggle Menu</span>
-            </Button>
-          </SheetTrigger>
-
-          <SheetContent side="left" className="pr-0 bg-background">
-            {/* Mobile Logo */}
-            <Link
-              href="/"
-              className="flex items-center space-x-2"
-              onClick={() => setIsOpen(false)}
-            >
-              <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-gray-900/50 border border-gray-800">
-                <Image
-                  src="/LOGO-removebg-preview.png"
-                  alt="LostFormed Logo"
-                  width={36}
-                  height={36}
-                  className="filter brightness-125 contrast-110"
-                />
-              </div>
-            </Link>
-
-            {/* Mobile Navigation Links */}
-            <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6 overflow-y-auto">
-              <div className="flex flex-col space-y-3">
-                {navigation.map((item, index) => (
-                  <motion.div
-                    key={item.href}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <Link
-                      href={item.href}
-                      onClick={() => setIsOpen(false)}
-                      className={cn(
-                        'flex items-center transition-colors hover:text-foreground/80 focus-ring rounded-sm px-2 py-1',
-                        pathname === item.href
-                          ? 'text-foreground font-medium'
-                          : 'text-foreground/60'
-                      )}
-                    >
-                      {item.icon && <item.icon className="h-4 w-4 mr-2" />}
-                      {item.name}
-                    </Link>
-                  </motion.div>
-                ))}
-
-                {/* Auth links */}
-                {user ? (
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: navigation.length * 0.1 }}
-                  >
-                    <button
-                      onClick={() => logout()}
-                      className="flex items-center w-full text-left transition-colors hover:text-foreground/80 focus-ring rounded-sm px-2 py-1 text-foreground/60"
-                    >
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Logout
-                    </button>
-                  </motion.div>
-                ) : (
-                  <>
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: navigation.length * 0.1 }}
-                    >
-                      <Link
-                        href="/login"
-                        onClick={() => setIsOpen(false)}
-                        className="flex items-center transition-colors hover:text-foreground/80 focus-ring rounded-sm px-2 py-1 text-foreground/60"
-                      >
-                        Login
-                      </Link>
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: (navigation.length + 1) * 0.1 }}
-                    >
-                      <Link
-                        href="/register"
-                        onClick={() => setIsOpen(false)}
-                        className="flex items-center transition-colors hover:text-foreground/80 focus-ring rounded-sm px-2 py-1 text-foreground/60"
-                      >
-                        Register
-                      </Link>
-                    </motion.div>
-                  </>
-                )}
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
-
-        {/* Right Side - Logo (Mobile) and User Actions */}
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-          {/* Mobile Logo */}
-          <div className="w-full flex-1 md:w-auto md:flex-none">
-            <Link href="/" className="flex items-center space-x-2 md:hidden">
-              <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-gray-900/50 border border-gray-800">
-                <Image
-                  src="/LOGO-removebg-preview.png"
-                  alt="LostFormed Logo"
-                  width={28}
-                  height={28}
-                  className="filter brightness-125 contrast-110"
-                />
-              </div>
-              <span className="font-bold bg-gradient-to-r from-gray-200 to-gray-400 bg-clip-text text-transparent">
-                LostFormed
-              </span>
-            </Link>
           </div>
 
-          {/* User Actions */}
-          <nav className="flex items-center">
+          {/* User Menu / Auth Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="h-8 w-8 rounded-full p-0 bg-background border border-border"
+                    className="relative h-8 w-8 rounded-full"
                   >
-                    {user.photoURL ? (
-                      <Image
-                        src={user.photoURL}
-                        alt="Profile"
-                        width={32}
-                        height={32}
-                        className="rounded-full"
-                      />
-                    ) : (
-                      <User className="h-4 w-4 text-foreground" />
-                    )}
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-white text-black">
+                        {user.name?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-background border border-border shadow-xl">
-                  <DropdownMenuItem className="focus:bg-accent cursor-pointer">
-                    <User className="w-4 h-4 mr-2" />
-                    <span>Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                <DropdownMenuContent
+                  className="w-56 bg-black border-white/20"
+                  align="end"
+                  forceMount
+                >
+                  <div className="flex items-center justify-start gap-2 p-2">
+                    <div className="flex flex-col space-y-1 leading-none">
+                      <p className="font-medium text-white">{user.name}</p>
+                      <p className="w-[200px] truncate text-sm text-white/60">
+                        {user.email}
+                      </p>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator className="bg-white/20" />
                   <DropdownMenuItem
-                    onClick={logout}
-                    className="focus:bg-accent cursor-pointer"
+                    asChild
+                    className="text-white hover:bg-white/10"
                   >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    <span>Logout</span>
+                    <Link href="/dashboard" className="flex items-center">
+                      <User className="mr-2 h-4 w-4" />
+                      Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    asChild
+                    className="text-white hover:bg-white/10"
+                  >
+                    <Link href="/settings" className="flex items-center">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-white/20" />
+                  <DropdownMenuItem
+                    className="text-white hover:bg-white/10 cursor-pointer"
+                    onClick={logout}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="hidden md:flex gap-2">
-                <Link href="/login">
-                  <Button variant="outline" className="border-border">
-                    Login
-                  </Button>
-                </Link>
-                <Link href="/register">
-                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-                    Register
-                  </Button>
-                </Link>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  asChild
+                  className="text-white hover:bg-white/10"
+                >
+                  <Link href="/login">Login</Link>
+                </Button>
+                <Button
+                  asChild
+                  className="bg-white text-black hover:bg-white/90"
+                >
+                  <Link href="/register">Sign Up</Link>
+                </Button>
               </div>
             )}
-          </nav>
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleMenu}
+              className="text-white"
+            >
+              {isOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </Button>
+          </div>
         </div>
+
+        {/* Mobile Navigation */}
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden border-t border-white/10"
+            >
+              <div className="px-2 pt-2 pb-3 space-y-1">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="text-white/80 hover:text-white block px-3 py-2 text-base font-medium transition-colors duration-200 flex items-center space-x-2"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+                {user ? (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      className="text-white/80 hover:text-white block px-3 py-2 text-base font-medium transition-colors duration-200 flex items-center space-x-2"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <User className="h-4 w-4" />
+                      <span>Dashboard</span>
+                    </Link>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setIsOpen(false);
+                      }}
+                      className="text-white/80 hover:text-white block px-3 py-2 text-base font-medium transition-colors duration-200 flex items-center space-x-2 w-full text-left"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>Logout</span>
+                    </button>
+                  </>
+                ) : (
+                  <div className="space-y-2 px-3 py-2">
+                    <Button
+                      variant="ghost"
+                      asChild
+                      className="w-full text-white hover:bg-white/10"
+                    >
+                      <Link href="/login" onClick={() => setIsOpen(false)}>
+                        Login
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      className="w-full bg-white text-black hover:bg-white/90"
+                    >
+                      <Link href="/register" onClick={() => setIsOpen(false)}>
+                        Sign Up
+                      </Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </motion.header>
+    </nav>
   );
 }

@@ -55,7 +55,9 @@ export const reportSchema = z.object({
     .max(1000, 'Description cannot exceed 1000 characters')
     .trim(),
   dateLostFound: z
-    .date({ required_error: 'Date is required' })
+    .date({
+      required_error: 'Date is required',
+    })
     .refine((date) => date <= new Date(), {
       message: 'Date cannot be in the future',
     }),
@@ -75,7 +77,12 @@ export const reportSchema = z.object({
     .trim()
     .optional()
     .or(z.literal('')),
-  priority: z.enum(['low', 'medium', 'high', 'urgent']),
+  priority: z
+    .enum(['low', 'medium', 'high', 'urgent'])
+
+    .refine((val) => !!val, {
+      message: 'Priority is required',
+    }),
   image: z.any().optional(),
 });
 
@@ -84,19 +91,23 @@ export const messageSchema = z.object({
   subject: z
     .string()
     .max(200, 'Subject cannot exceed 200 characters')
-    .trim()
     .optional()
     .or(z.literal('')),
   message: z
     .string()
     .min(10, 'Message must be at least 10 characters')
-    .max(1000, 'Message cannot exceed 1000 characters')
-    .trim(),
-  messageType: z.enum(['inquiry', 'match_notification', 'general', 'system']),
-  // ✅ Fixed
-  priority: z.enum(['low', 'normal', 'high'], {
-    required_error: 'Priority is required',
-  }),
+    .max(1000, 'Message cannot exceed 1000 characters'),
+  messageType: z.enum([
+    'inquiry',
+    'match_notification',
+    'match_contact',
+    'general',
+    'system',
+    'found_notification',
+    'contact_owner', // ✅ add this
+    'quick_contact', // ✅ Add this line if missing
+  ]),
+  priority: z.enum(['low', 'normal', 'high']).default('normal'),
 });
 
 export const userUpdateSchema = z.object({
@@ -114,7 +125,6 @@ export const userUpdateSchema = z.object({
     .optional(),
 });
 
-// ✅ Types
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type RegisterFormData = z.infer<typeof registerSchema>;
 export type ReportFormData = z.infer<typeof reportSchema>;

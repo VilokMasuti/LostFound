@@ -15,13 +15,20 @@ export async function GET() {
 
     await connectDB()
 
-    // Find matches where user owns either report
+    // Find matches where user is involved and status is NOT resolved
     const matches = await Match.find({
-      $or: [{ reportId: { $exists: true } }, { matchedReportId: { $exists: true } }],
+      $and: [
+        {
+          $or: [{ reportId: { $exists: true } }, { matchedReportId: { $exists: true } }],
+        },
+        {
+          status: { $ne: "resolved" }, // Exclude resolved matches
+        },
+      ],
     })
       .populate({
         path: "reportId",
-        select: "brand color type location description dateLostFound imageUrl userId",
+        select: "brand color type location description dateLostFound imageUrl userId status",
         populate: {
           path: "userId",
           select: "name email",
@@ -29,7 +36,7 @@ export async function GET() {
       })
       .populate({
         path: "matchedReportId",
-        select: "brand color type location description dateLostFound imageUrl userId",
+        select: "brand color type location description dateLostFound imageUrl userId status",
         populate: {
           path: "userId",
           select: "name email",
@@ -37,22 +44,30 @@ export async function GET() {
       })
       .lean()
 
-    console.log("📊 Found matches:", matches.length)
+    console.log("📊 Found matches before filtering:", matches.length)
 
-    // Filter matches where user owns either report and transform data
+    // Filter matches where user owns either report and exclude resolved reports
     const userMatches = matches
-      .filter((match) => {
-        const reportId = match.reportId as any
-        const matchedReportId = match.matchedReportId as any
+      .filter((match: any) => {
+        const reportId = match.reportId
+        const matchedReportId = match.matchedReportId
 
-        return reportId?.userId?._id?.toString() === userId || matchedReportId?.userId?._id?.toString() === userId
+        // Check if user owns either report
+        const userOwnsReport =
+          reportId?.userId?._id?.toString() === userId || matchedReportId?.userId?._id?.toString() === userId
+
+        // Check if either report is resolved
+        const reportResolved = reportId?.status === "resolved" || matchedReportId?.status === "resolved"
+
+        // Only include if user owns and neither report is resolved
+        return userOwnsReport && !reportResolved && match.status !== "resolved"
       })
-      .map((match) => {
-        const reportId = match.reportId as any
-        const matchedReportId = match.matchedReportId as any
+      .map((match: any) => {
+        const reportId = match.reportId
+        const matchedReportId = match.matchedReportId
 
         return {
-          _id: (match._id as any)?.toString(),
+          _id: match._id?.toString(),
           reportId: reportId?._id?.toString() || null,
           matchedReportId: matchedReportId?._id?.toString() || null,
           similarity: match.similarity,
@@ -70,6 +85,7 @@ export async function GET() {
                 description: reportId.description,
                 dateLostFound: reportId.dateLostFound,
                 imageUrl: reportId.imageUrl,
+                status: reportId.status,
                 userId: reportId.userId._id.toString(),
                 user: {
                   _id: reportId.userId._id.toString(),
@@ -88,6 +104,7 @@ export async function GET() {
                 description: matchedReportId.description,
                 dateLostFound: matchedReportId.dateLostFound,
                 imageUrl: matchedReportId.imageUrl,
+                status: matchedReportId.status,
                 userId: matchedReportId.userId._id.toString(),
                 user: {
                   _id: matchedReportId.userId._id.toString(),
@@ -99,10 +116,10 @@ export async function GET() {
         }
       })
 
-    console.log("✅ User matches found:", userMatches.length)
+    console.log("✅ Active user matches found:", userMatches.length)
     return NextResponse.json(userMatches)
   } catch (error) {
-    console.error("Get matches error:", error)
+    console.error("❌ Get matches error:", error)
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

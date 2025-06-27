@@ -6,7 +6,6 @@ import { Footer } from '@/components/Footer';
 import { Navbar } from '@/components/Navbar';
 import { usePathname } from 'next/navigation';
 
-
 interface ConditionalLayoutProps {
   children: React.ReactNode;
 }
@@ -23,9 +22,8 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 overflow-y-auto">{children}</main>
       <Footer />
     </div>
   );

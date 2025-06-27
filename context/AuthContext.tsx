@@ -1,6 +1,7 @@
 'use client';
 
-import type { AuthContextType, User } from '../type';
+import type { AuthContextType } from '../type';
+import type { APIUser } from '../type/api';
 
 import {
   createContext,
@@ -13,12 +14,17 @@ import { toast } from 'sonner';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+type AuthProviderProps = {
+  children: ReactNode;
+};
+
+export function AuthProvider({ children }: AuthProviderProps) {
+  const [user, setUser] = useState<APIUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     checkAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkAuth = async () => {
