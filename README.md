@@ -1,4 +1,4 @@
-# LostFormed - Lost & Found Phone Reporting System
+# Reconnect - Lost & Found Phone Reporting System
 
 A production-ready, full-stack web application that helps people report lost or found phones and automatically matches them using intelligent algorithms.
 
@@ -138,7 +138,7 @@ lostformed/
 - Automatic image compression and format conversion
 
 ### Private Messaging
-- Secure user-to-user communication
+
 - One message per report to prevent spam
 - Read/unread status tracking
 - Message deletion and management
@@ -192,9 +192,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 If you have any questions or need help, please:
 - Open an issue on GitHub
-- Contact us at support@lostformed.com
-- Check our [documentation](https://docs.lostformed.com)
+- Contact at vilok@outlook.com
+
 
 ---
 
-Built with ❤️ by the LostFormed team
+Built with ❤️ by the VILOK
