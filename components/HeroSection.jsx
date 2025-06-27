@@ -68,15 +68,15 @@ export function HeroSection() {
           <div className="space-y-6 md:space-y-8 text-center lg:text-left ml-[] md:ml-0">
             <Badge className="mx-auto lg:mx-0 mb-4 md:mb-6 bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-white border-white/20 hover:bg-gradient-to-r hover:from-blue-600/30 hover:to-purple-600/30 transition-all duration-300 max-w-max text-xs md:text-sm">
               <Sparkles className="mr-2 h-3 w-3 md:h-4 md:w-4" />
-              Powered by VILOK - STILL WORK  IN PROGRESS
+              Powered by VILOK - STILL WORK IN PROGRESS
             </Badge>
 
             <div className="space-y-3 md:space-y-4">
               <motion.h1
                 initial={{ opacity: 0, scale: 1 }}
                 animate={{ opacity: 0.2, scale: 1 }}
-                transition={{ duration: 5, delay: 6 }}
-                className=" bg-clip-text text-transparent bg-gradient-to-b from-neutral-50  to-neutral-800 font-bold tracking-tight sm:text-6xl leading-tight  glowing-text text-5xl md:text-7xl lg:text-8xl xl:text-9xl"
+                transition={{ duration: 3, delay: 4 }}
+                className=" bg-clip-text text-transparent bg-gradient-to-b from-neutral-50  to-neutral-700 font-bold tracking-tight sm:text-6xl leading-tight  glowing-text text-5xl md:text-7xl lg:text-8xl xl:text-9xl"
               >
                 Reconnect
               </motion.h1>

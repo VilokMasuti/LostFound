@@ -48,7 +48,7 @@ export function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <Image
-              src="/public/bglogo-removebg-preview.png"
+              src="/bglogo-removebg-preview.png"
               alt="LostFormed Logo"
               width={40}
               height={40}

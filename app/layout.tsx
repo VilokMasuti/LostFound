@@ -2,12 +2,12 @@ import { ConditionalLayout } from '@/components/ConditionalLayout';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AuthProvider } from '@/context/AuthContext';
 import { QueryProvider } from '@/context/QueryProvider';
+import { Analytics } from '@vercel/analytics/next';
 import type { Metadata } from 'next';
 import { Inter, Outfit, Poppins } from 'next/font/google';
 import type React from 'react';
 import { Toaster } from 'sonner';
 import './globals.css';
-
 // Modern font combinations
 const inter = Inter({
   subsets: ['latin'],
@@ -29,47 +29,37 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: 'ReConnect- Lost & Found Phone Reporting System',
-  description:
-    'Report lost or found phones and find matches automatically with our AI-powered system',
+  title: 'ReConnect - Lost & Found Phone Reporting System',
+  description: 'Report lost or found phones and find matches automatically with our AI-powered system',
   icons: {
     icon: [
+      // REMOVED '/public/' prefix
+      { url: '/LOGO-removebg-preview.png', sizes: '192x192', type: 'image/png' },
       { url: '/LOGO-removebg-preview.png', sizes: '32x32', type: 'image/png' },
       { url: '/LOGO-removebg-preview.png', sizes: '16x16', type: 'image/png' },
     ],
     shortcut: '/LOGO-removebg-preview.png',
     apple: '/LOGO-removebg-preview.png',
   },
-  keywords:
-    'lost phone, found phone, phone recovery, lost and found, phone matching',
-  authors: [{ name: 'LostFormed Team' }],
-  creator: 'LostFormed',
-  publisher: 'LostFormed',
-  robots: 'index, follow',
+  // ... rest of metadata
   openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    url: 'https://lostformed.com',
-    title: 'LostFormed - Lost & Found Phone Reporting System',
-    description:
-      'Report lost or found phones and find matches automatically with our AI-powered system',
-    siteName: 'LostFormed',
+    // ... other properties
     images: [
       {
-        url: '/LOGO-removebg-preview.png',
+        // ADDED absolute path
+        url: 'https://lost-found-livid.vercel.app/LOGO-removebg-preview.png',
         width: 1200,
         height: 630,
-        alt: 'LostFormed Logo',
+        alt: 'ReConnect Logo',
       },
     ],
   },
   twitter: {
-    card: 'summary_large_image',
-    title: 'LostFormed - Lost & Found Phone Reporting System',
-    description:
-      'Report lost or found phones and find matches automatically with our AI-powered system',
-    creator: '@lostformed',
-    images: ['/LOGO-removebg-preview.png'],
+    // ... other properties
+    images: [
+      // ADDED absolute path
+      'https://lost-found-livid.vercel.app/LOGO-removebg-preview.png'
+    ],
   },
 };
 
@@ -100,6 +90,7 @@ export default function RootLayout({
             <AuthProvider>
               <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex flex-col">
                 <ConditionalLayout>{children}</ConditionalLayout>
+                <Analytics />
                 <Toaster
                   position="top-right"
                   expand={true}
