@@ -2,8 +2,7 @@ import { NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import Report from "@/models/Report"
 import type { Types } from "mongoose"
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import User from "@/models/User" // ✅ Add this!
+import "@/models/User";
 // Define interface for populated report
 interface PopulatedReport {
   _id: Types.ObjectId

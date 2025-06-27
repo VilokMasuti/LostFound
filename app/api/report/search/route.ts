@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import connectDB from '@/lib/mongodb';
+import "@/models/User"; // ✅ this is critical for cold starts
 import Report from '@/models/Report';
 import type { Types } from 'mongoose';
 import { type NextRequest, NextResponse } from 'next/server';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import User from "@/models/User";
 interface PopulatedReportSearch {
   _id: Types.ObjectId;
   userId:

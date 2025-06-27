@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import Match from "@/models/Match"
 import Report from "@/models/Report"
-
+import "@/models/User";
 import { getAuthUser } from "@/lib/auth"
 import { Notification } from "@/models/Notification"
 

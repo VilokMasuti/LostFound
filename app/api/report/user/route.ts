@@ -2,8 +2,7 @@ import { NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import Report from "@/models/Report"
 import { getAuthUser } from "@/lib/auth"
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import User from "@/models/User";
+import "@/models/User";
 export async function GET() {
   try {
     console.log("👤 GET /api/reports/user - Fetching user reports")

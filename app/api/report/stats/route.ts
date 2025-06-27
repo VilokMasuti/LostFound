@@ -4,8 +4,7 @@ import Report from "@/models/Report"
 import Match from "@/models/Match"
 import { getAuthUser } from "@/lib/auth"
 import Message from "@/models/Message"
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import User from "@/models/User";
+import "@/models/User";
 export async function GET() {
   try {
     console.log("📊 GET /api/reports/stats - Fetching user stats")

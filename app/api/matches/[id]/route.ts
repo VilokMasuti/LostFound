@@ -4,8 +4,7 @@ import connectDB from "@/lib/mongodb"
 import Match from "@/models/Match"
 import Report from "@/models/Report"
 import { getAuthUser } from "@/lib/auth"
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import User from "@/models/User";
+import "@/models/User";
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     const userId = await getAuthUser()

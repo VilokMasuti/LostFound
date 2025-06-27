@@ -2,8 +2,7 @@ import { getAuthUser } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import Message from '@/models/Message';
 import { type NextRequest, NextResponse } from 'next/server';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import User from "@/models/User";
+import "@/models/User";
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }

@@ -2,8 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { type NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import User from "@/models/User";
+import "@/models/User";
 import { getAuthUser } from "@/lib/auth"
 import { Notification } from "@/models/Notification"
 

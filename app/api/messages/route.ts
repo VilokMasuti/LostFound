@@ -5,10 +5,10 @@ import { messageSchema } from '@/lib/validations';
 import Message from '@/models/Message';
 import Report from '@/models/Report';
 
+import '@/models/User';
+import User from '@/models/User';
 import type { Types } from 'mongoose';
 import { type NextRequest, NextResponse } from 'next/server';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import User from "@/models/User";
 // Define interfaces for populated documents
 interface PopulatedUser {
   _id: Types.ObjectId;
