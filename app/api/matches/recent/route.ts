@@ -1,7 +1,8 @@
 import connectDB from '@/lib/mongodb';
 import Match from '@/models/Match';
 import { NextResponse } from 'next/server';
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import User from "@/models/User";
 export async function GET() {
   try {
     await connectDB();

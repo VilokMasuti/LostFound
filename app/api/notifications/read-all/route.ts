@@ -3,7 +3,8 @@ import connectDB from "@/lib/mongodb"
 import { Notification } from "@/models/Notification"
 
 import { getAuthUser } from "@/lib/auth"
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import User from "@/models/User";
 export async function PATCH() {
   try {
     const userId = await getAuthUser()

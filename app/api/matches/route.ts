@@ -3,7 +3,8 @@ import { NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import Match from "@/models/Match"
 import { getAuthUser } from "@/lib/auth"
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import User from "@/models/User";
 export async function GET() {
   try {
     const userId = await getAuthUser()

@@ -448,16 +448,14 @@ export default function DashboardContent() {
     console.log(`🔄 Marking match ${matchId} as returned...`);
 
     try {
-      // Show immediate loading state
       const response = await fetch(`/api/matches/${matchId}/return`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        // ✅ Only send what's needed (userId is handled server-side via session)
         body: JSON.stringify({
-          // Send minimal data to avoid validation issues
           isLostUser,
-          userId: user?._id,
         }),
       });
 
@@ -475,20 +473,19 @@ export default function DashboardContent() {
       const responseData = await response.json();
       console.log('✅ API Response:', responseData);
 
-      // IMMEDIATE UI UPDATES - Don't wait for API
+      // 🔄 Optimistically update UI
       setResolvedMatches((prev) => new Set(prev).add(matchId));
       setMatches((prev) => prev.filter((match) => match._id !== matchId));
 
-      // Show success popup IMMEDIATELY
+      // 🎉 Show success popup
       setSuccessPopupData({
-        title: '🎉 Phone Successfully Returned!',
+        title: '🎉 Case Successfully Resolved!',
         message:
           'Thanks for contributing to the community! The case has been marked as resolved.',
         type: 'resolved',
       });
       setShowSuccessPopup(true);
 
-      // Show toast notification
       toast.success('Case resolved successfully! 🎉', {
         duration: 4000,
         style: {
@@ -499,37 +496,31 @@ export default function DashboardContent() {
         icon: <CheckCircle className="w-4 h-4" />,
       });
 
-      console.log(`✅ Match ${matchId} marked as resolved and removed from UI`);
-
-      // Refresh data in background after a short delay
+      // Optional background refresh
       setTimeout(async () => {
         try {
           await fetchAllData(true);
           console.log('✅ Background data refresh completed');
         } catch (error) {
           console.error('⚠️ Background refresh failed:', error);
-          // Don't show error to user since main action succeeded
         }
       }, 2000);
     } catch (error) {
       console.error('❌ Error marking as returned:', error);
 
-      // Revert optimistic updates on error
       setResolvedMatches((prev) => {
         const newSet = new Set(prev);
         newSet.delete(matchId);
         return newSet;
       });
 
-      // Restore match if it was removed
+      // Re-add match if removed
       if (!matches.find((m) => m._id === matchId)) {
         fetchUserMatches().catch(console.error);
       }
 
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to mark as returned';
-
-      // Show user-friendly error message
       toast.error('Failed to resolve case. Please try again.', {
         description: errorMessage.includes('validation')
           ? 'There was a system error. Please refresh and try again.'

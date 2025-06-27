@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import Report from "@/models/Report"
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import User from "@/models/User";
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
     await connectDB()

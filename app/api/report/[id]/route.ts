@@ -4,7 +4,8 @@ import Report from "@/models/Report"
 import Match from "@/models/Match"
 import Message from "@/models/Message"
 import { getAuthUser } from "@/lib/auth"
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import User from "@/models/User";
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     await connectDB()
