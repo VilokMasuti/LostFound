@@ -1,99 +1,109 @@
-import mongoose from 'mongoose';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import {
+  Model,
+  Schema,
+  Types,
+  model,
+  models,
+} from 'mongoose';
 
-const MessageSchema = new mongoose.Schema(
+interface IMessage {
+  from: Types.ObjectId;
+  to: Types.ObjectId;
+  reportId: Types.ObjectId;
+  subject?: string;
+  message: string;
+  read: boolean;
+  readAt?: Date;
+  deleted: boolean;
+  deletedAt?: Date;
+  messageType: string;
+  priority: string;
+  attachments?: {
+    url?: string;
+    filename?: string;
+    size?: number;
+  }[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+interface MessageModel extends Model<IMessage> {
+  markAsRead(messageIds: string[], userId: string): Promise<any>;
+  getUnreadCount(userId: string): Promise<number>;
+}
+
+const MessageSchema = new Schema<IMessage, MessageModel>(
   {
     from: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Sender is required'],
+      required: true,
       index: true,
     },
     to: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Recipient is required'],
+      required: true,
       index: true,
     },
     reportId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'Report',
-      required: [true, 'Report ID is required'],
+      required: true,
       index: true,
     },
     subject: {
       type: String,
-      required: false,
       trim: true,
-      maxlength: [200, 'Subject cannot exceed 200 characters'],
-      default: () => 'Message about your report',
+      maxlength: 200,
+      default: 'Message about your report',
     },
     message: {
       type: String,
-      required: [true, 'Message content is required'],
+      required: true,
       trim: true,
-      minlength: [10, 'Message must be at least 10 characters'],
-      maxlength: [1000, 'Message cannot exceed 1000 characters'],
+      minlength: 10,
+      maxlength: 1000,
     },
     read: {
       type: Boolean,
       default: false,
       index: true,
     },
-    readAt: {
-      type: Date,
-      required: false,
-    },
+    readAt: Date,
     deleted: {
       type: Boolean,
       default: false,
       index: true,
     },
-    deletedAt: {
-      type: Date,
-      required: false,
-    },
+    deletedAt: Date,
     messageType: {
       type: String,
-      enum: {
-        values: [
-          'inquiry',
-          'match_notification',
-          'general',
-          'system',
-          'found_notification',
-          'match_contact', // <-- Add this
-          'quick_contact', // ✅ ADD THIS
-           'contact_owner', // ✅ add this
-        ],
-        message:
-          'Message type must be inquiry, match_notification, general, system, or found_notification',
-      },
+      enum: [
+        'inquiry',
+        'match_notification',
+        'general',
+        'system',
+        'found_notification',
+        'match_contact',
+        'quick_contact',
+        'contact_owner',
+      ],
       default: 'inquiry',
     },
     priority: {
       type: String,
-      enum: {
-        values: ['low', 'normal', 'high'],
-        message: 'Priority must be low, normal, or high',
-      },
+      enum: ['low', 'normal', 'high'],
       default: 'normal',
     },
     attachments: [
       {
-        url: {
-          type: String,
-          required: false,
-          trim: true,
-        },
-        filename: {
-          type: String,
-          required: false,
-          trim: true,
-        },
+        url: String,
+        filename: String,
         size: {
           type: Number,
-          required: false,
-          min: [0, 'File size cannot be negative'],
+          min: 0,
         },
       },
     ],
@@ -102,7 +112,7 @@ const MessageSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: {
       virtuals: true,
-      transform: (doc, ret) => {
+      transform: (_, ret) => {
         ret.id = ret._id;
         delete ret._id;
         delete ret.__v;
@@ -112,34 +122,32 @@ const MessageSchema = new mongoose.Schema(
   }
 );
 
-// Compound indexes for efficient queries
+// Indexes
 MessageSchema.index({ to: 1, read: 1, createdAt: -1 });
 MessageSchema.index({ from: 1, createdAt: -1 });
 MessageSchema.index({ reportId: 1, createdAt: -1 });
 MessageSchema.index({ to: 1, deleted: 1, createdAt: -1 });
 MessageSchema.index({ messageType: 1, priority: 1 });
 
-// Virtual for message age
+// Virtual
 MessageSchema.virtual('ageInHours').get(function () {
   const now = new Date();
-  const created = this.createdAt;
-  return Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60));
+  if (!this.createdAt) return undefined;
+  return Math.floor((now.getTime() - this.createdAt.getTime()) / (1000 * 60 * 60));
 });
 
-// Pre-save middleware to set readAt when read is true
+// Middleware
 MessageSchema.pre('save', function (next) {
   if (this.isModified('read') && this.read && !this.readAt) {
     this.readAt = new Date();
   }
-
   if (this.isModified('deleted') && this.deleted && !this.deletedAt) {
     this.deletedAt = new Date();
   }
-
   next();
 });
 
-// Static method to mark messages as read
+// Statics
 MessageSchema.statics.markAsRead = function (
   messageIds: string[],
   userId: string
@@ -159,7 +167,6 @@ MessageSchema.statics.markAsRead = function (
   );
 };
 
-// Static method to get unread count
 MessageSchema.statics.getUnreadCount = function (userId: string) {
   return this.countDocuments({
     to: userId,
@@ -168,5 +175,9 @@ MessageSchema.statics.getUnreadCount = function (userId: string) {
   });
 };
 
-export default mongoose.models.Message ||
-  mongoose.model('Message', MessageSchema);
+// Export
+const Message =
+  (models.Message as MessageModel) ||
+  model<IMessage, MessageModel>('Message', MessageSchema);
+
+export default Message;

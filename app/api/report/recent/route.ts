@@ -1,26 +1,36 @@
-import { NextResponse } from "next/server"
-import connectDB from "@/lib/mongodb"
-import Report from "@/models/Report"
+import connectDB from '@/lib/mongodb';
+import Report from '@/models/Report';
+import { NextResponse ,NextRequest} from 'next/server';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    await connectDB()
+    await connectDB();
 
-    // Get reports from the last 5 minutes
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
+    const { searchParams } = new URL(req.url);
+    const since = searchParams.get('since');
+
+    const cutoff = since
+      ? new Date(Number(since))
+      : new Date(Date.now() - 5 * 60 * 1000);
 
     const recentReports = await Report.find({
-      createdAt: { $gte: fiveMinutesAgo },
-      status: "active",
+      createdAt: { $gte: cutoff },
+      status: 'active',
     })
-      .populate("userId", "name")
+      .populate('userId', 'name')
       .sort({ createdAt: -1 })
       .limit(10)
-      .lean()
+      .lean();
 
-    return NextResponse.json(recentReports)
+    console.log(
+      '📦 Fetched recent reports since:',
+      cutoff,
+      '| Count:',
+      recentReports.length
+    );
+    return NextResponse.json(recentReports);
   } catch (error) {
-    console.error("Failed to fetch recent reports:", error)
-    return NextResponse.json([], { status: 500 })
+    console.error('Failed to fetch recent reports:', error);
+    return NextResponse.json([], { status: 500 });
   }
 }

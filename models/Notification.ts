@@ -13,7 +13,7 @@ const notificationSchema = new mongoose.Schema(
         'match_found',
         'message_received',
         'report_resolved',
-        'match_confirmed',
+        'case_resolved', // ✅ ADD THIS
       ],
       required: true,
     },

@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { SuccessPopup } from '@/components/ui/success-popup';
 import { useAuth } from '@/context/AuthContext';
 import type { Match, Report } from '@/type';
 import { format } from 'date-fns';
@@ -44,7 +43,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-
+import { ConfettiSuccessPopup } from './confetti-success-popup';
 // Enhanced animation variants for modern feel
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -1714,7 +1713,7 @@ export default function DashboardContent() {
         )}
 
         {/* Success Popup */}
-        <SuccessPopup
+        <ConfettiSuccessPopup
           isOpen={showSuccessPopup}
           onClose={() => setShowSuccessPopup(false)}
           title={successPopupData.title}

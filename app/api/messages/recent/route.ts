@@ -13,7 +13,7 @@ export async function GET() {
       createdAt: { $gte: fiveMinutesAgo },
       read: false,
     })
-      .populate('senderId', 'name')
+      .populate('from', 'name')
       .sort({ createdAt: -1 })
       .limit(10)
       .lean();
@@ -21,7 +21,7 @@ export async function GET() {
     // Transform data for easier use
     const transformedMessages = recentMessages.map((message) => ({
       ...message,
-      senderName: message.senderId.name,
+      senderName: (message.from as unknown as { name: string }).name,
     }));
 
     return NextResponse.json(transformedMessages);

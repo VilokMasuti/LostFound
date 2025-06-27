@@ -2,7 +2,8 @@
 const nextConfig = {
   experimental: {
     serverActions: {
-      allowedOrigins: ["localhost:3000", "127.0.0.1:3000"],
+      bodySizeLimit: '5mb', // or '10mb' depending on your needs
+      allowedOrigins: ['localhost:3000', '127.0.0.1:3000'],
     },
   },
   eslint: {
@@ -12,17 +13,17 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    domains: ["res.cloudinary.com"],
+    domains: ['res.cloudinary.com'],
     unoptimized: true,
   },
   async rewrites() {
     return [
       {
-        source: "/api/:path*",
-        destination: "/api/:path*",
+        source: '/api/:path*',
+        destination: '/api/:path*',
       },
-    ]
+    ];
   },
-}
+};
 
-export default nextConfig
+export default nextConfig;
