@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { AwwwardsLoading } from '@/components/ui/loading';
 import { useAuth } from '@/context/AuthContext';
 import { useDebounce } from '@/hooks/useDebouncs';
 import { useGlobalReportNotifications } from '@/hooks/useGlobalReportNotifications';
@@ -326,25 +327,8 @@ export default function ReportsContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{
-              duration: 2,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: 'linear',
-            }}
-            className="mb-6"
-          >
-            <RefreshCw className="h-16 w-16 text-white mx-auto" />
-          </motion.div>
-          <p className="text-white text-xl font-medium">Loading reports...</p>
-        </motion.div>
+      <div className="min-h-screen b flex items-center justify-center">
+        <AwwwardsLoading isLoading={true} />
       </div>
     );
   }
@@ -389,8 +373,27 @@ export default function ReportsContent() {
         >
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
             <div className="flex-1 min-w-0">
-              <h1 className="bg-clip-text text-transparent bg-gradient-to-b from-neutral-50  to-neutral-800 font-bold tracking-tight sm:text-6xl leading-tight  glowing-text text-5xl md:text-6xl lg:text-6xl xl:text-xl gap-3 break-words">
-                Browse Reports
+              <h1 className="text-3xl uppercase md:text-4xl  text-white  tracking-tight ">
+                <motion.span
+                  animate={{
+                    backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+                  }}
+                  transition={{
+                    duration: 4,
+                    repeat: Number.POSITIVE_INFINITY,
+                    ease: 'linear',
+                  }}
+                  style={{
+                    background:
+                      'linear-gradient(90deg, #ffffff 0%, #ffffff66 25%, #ffffff 50%, #ffffff66 75%, #ffffff 100%)',
+                    backgroundSize: '200% 100%',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  Browse Reports
+                </motion.span>
                 {newReportsCount > 0 && (
                   <motion.div
                     initial={{ scale: 0 }}

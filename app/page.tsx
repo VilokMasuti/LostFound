@@ -1,17 +1,19 @@
 'use client';
 
 import { HeroSection } from '@/components/HeroSection';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { useAuth } from '@/context/AuthContext';
+import { HomepageLoader } from '@/components/homepage-loader';
+import { useState } from 'react';
 
 export default function HomePage() {
-  const { loading } = useAuth();
+  const [showWebsite, setShowWebsite] = useState(false);
 
-  if (loading) {
+  if (!showWebsite) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
+      <HomepageLoader
+        onComplete={() => setShowWebsite(true)}
+        brandName="Reconnect"
+        duration={10000} // Exactly 10 seconds
+      />
     );
   }
 

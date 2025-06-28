@@ -12,13 +12,13 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  CircleDashed,
+
   LogOut,
   Menu,
   MessageCircle,
   Phone,
   Search,
-  Settings,
+ LayoutDashboard,
   User,
   X,
 } from 'lucide-react';
@@ -35,7 +35,7 @@ export function Navbar() {
     { href: '/', label: 'Home', icon: Phone },
     { href: '/reports', label: 'Browse', icon: Search },
     { href: '/report', label: 'Report', icon: Phone },
-    { href: '/dashboard', label: 'Dashboard', icon: CircleDashed },
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard},
     ...(user
       ? [{ href: '/inbox', label: 'Messages', icon: MessageCircle }]
       : []),
@@ -113,10 +113,7 @@ export function Navbar() {
                     asChild
                     className="text-white hover:bg-white/10"
                   >
-                    <Link href="/settings" className="flex items-center">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
-                    </Link>
+
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-white/20" />
                   <DropdownMenuItem

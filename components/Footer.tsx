@@ -1,4 +1,4 @@
-import { Phone } from 'lucide-react';
+
 import Link from 'next/link';
 
 export function Footer() {
@@ -9,12 +9,12 @@ export function Footer() {
           {/* Logo and Description */}
           <div className="space-y-4">
             <Link href="/" className="flex items-center space-x-2">
-              <Phone className="h-6 w-6 text-primary" />
-              <span className="font-bold text-xl">LostFormed</span>
+
+              <span className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-b from-neutral-50  to-neutral-700  tracking-tighter">Reconnect</span>
             </Link>
             <p className="text-sm text-muted-foreground">
               Connecting people with their lost phones through smart matching
-              and secure communication.
+
             </p>
           </div>
 
@@ -63,7 +63,7 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link
-                  href="/help"
+                  href="/"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Help Center
@@ -71,7 +71,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/privacy"
+                  href="/"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Privacy Policy
@@ -79,7 +79,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/terms"
+                  href="/"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Terms of Service
@@ -87,7 +87,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/contact"
+                  href="/"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Contact Us
@@ -100,14 +100,14 @@ export function Footer() {
           <div className="space-y-4">
             <h3 className="font-semibold">Community</h3>
             <div className="space-y-2 text-sm text-muted-foreground">
-              <p>Helping reunite phones with their owners since 2024</p>
+              <p>Helping reunite phones with their owners </p>
               <p>Built with ❤️ for the community</p>
             </div>
           </div>
         </div>
 
         <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-          <p>&copy; 2024 LostFormed. All rights reserved.</p>
+          <p>&copy; All rights reserved.</p>
         </div>
       </div>
     </footer>

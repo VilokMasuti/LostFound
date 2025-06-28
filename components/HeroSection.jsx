@@ -9,7 +9,6 @@ import { useEffect, useState } from 'react';
 import { Badge } from './ui/badge';
 import Beams from './ui/Beams';
 import CardSwap, { Card } from './ui/CardSwap';
-
 const typewriterTexts = [
   'Reuniting people with their lost phones.',
   'Smart matching technology at work.',
@@ -48,7 +47,7 @@ export function HeroSection() {
   }, [displayText, isDeleting, currentText]);
 
   return (
-    <div className="relative min-h-[80vh] sm:min-h-[85vh] md:min-h-[90vh] bg-black text-white overflow-hidden">
+    <div className="relative min-h-[80vh] sm:min-h-[85vh] md:min-h-[90vh] bg-black text-white overflow-hidden sm:mt-[-6rem]">
       <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
         <Beams
           beamWidth={3}
@@ -63,7 +62,7 @@ export function HeroSection() {
       </div>
 
       <div className="relative z-10 container mx-auto px-4 py-16 md:py-24 lg:py-32">
-        <div className="grid lg:grid-cols-2 items-center gap-6 md:gap-8 lg:gap-10">
+        <div className="grid lg:grid-cols-2 items-center gap-6 md:gap-6 lg:gap-6">
           {/* Left Text Section */}
           <div className="space-y-6 md:space-y-8 text-center lg:text-left ml-[] md:ml-0">
             <Badge className="mx-auto lg:mx-0 mb-4 md:mb-6 bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-white border-white/20 hover:bg-gradient-to-r hover:from-blue-600/30 hover:to-purple-600/30 transition-all duration-300 max-w-max text-xs md:text-sm">
@@ -72,17 +71,31 @@ export function HeroSection() {
             </Badge>
 
             <div className="space-y-3 md:space-y-4">
-              <motion.h1
-                initial={{ opacity: 0, scale: 1 }}
-                animate={{ opacity: 0.2, scale: 1 }}
-                transition={{ duration: 3, delay: 4 }}
-                className=" bg-clip-text text-transparent bg-gradient-to-b from-neutral-50  to-neutral-700 font-bold tracking-tight sm:text-6xl leading-tight  glowing-text text-5xl md:text-7xl lg:text-8xl xl:text-9xl"
-              >
-                Reconnect
-              </motion.h1>
+              <h1 className="text-6xl uppercase md:text-8xl font-serif  text-white mb-6 tracking-tight  sm:ml-[4rem]">
+                <motion.span
+                  animate={{
+                    backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+                  }}
+                  transition={{
+                    duration: 4,
+                    repeat: Number.POSITIVE_INFINITY,
+                    ease: 'linear',
+                  }}
+                  style={{
+                    background:
+                      'linear-gradient(90deg, #ffffff 0%, #ffffff66 25%, #ffffff 50%, #ffffff66 75%, #ffffff 100%)',
+                    backgroundSize: '200% 100%',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  Reconnect
+                </motion.span>
+              </h1>
 
               <div className="h-12 md:h-16 flex items-center justify-center lg:justify-start">
-                <p className="text-base md:text-lg lg:text-xl bg-clip-text text-transparent bg-gradient-to-r from-gray-100 to-gray-400 font-medium px-2 md:px-0 max-w-lg mx-auto lg:mx-0">
+                <p className=" md:text-lg lg:text-xl bg-clip-text text-transparent  bg-gradient-to-r from-gray-100 to-gray-500  px-2 md:px-0 max-w-lg mx-auto lg:mx-0">
                   {displayText}
                   <span className="animate-pulse text-white">|</span>
                 </p>

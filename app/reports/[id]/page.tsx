@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
-
+import { AwwwardsLoading } from '@/components/ui/loading';
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import type { Report } from "@/type"
@@ -181,17 +181,8 @@ export default function ReportDetailPage() {
   // Loading state
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-            className="mb-6"
-          >
-            <Loader2 className="h-16 w-16 text-white mx-auto" />
-          </motion.div>
-          <p className="text-white text-xl">Loading report details...</p>
-        </motion.div>
+      <div className="min-h-screen  flex items-center justify-center">
+        <AwwwardsLoading isLoading={true} />
       </div>
     )
   }

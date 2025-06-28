@@ -602,7 +602,7 @@ export default function InboxPage() {
                   <Mail className="h-24 w-24 text-muted-foreground mx-auto mb-6" />
                   <h2 className="text-2xl font-bold mb-4 text-foreground">No Read Messages</h2>
                   <p className="text-muted-foreground text-lg max-w-md mx-auto">
-                    Messages you've read will appear here for easy reference.
+                    Messages you&apos;ve read will appear here for easy reference.
                   </p>
                 </CardContent>
               </Card>

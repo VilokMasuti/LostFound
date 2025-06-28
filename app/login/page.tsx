@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/AuthContext';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { motion } from 'framer-motion';
 import { Eye, EyeOff } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
@@ -23,7 +23,6 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
-
 
   const {
     register,
@@ -74,8 +73,27 @@ const Index = () => {
               className="h-20 w-20 rotate-90 glowing "
             />
           </div>
-          <h1 className="text-3xl  bg-clip-text text-transparent bg-gradient-to-b from-neutral-50  to-neutral-800 font-bold mb-2 tracking-wider ">
-            Welcome Back
+          <h1 className="text-3xl uppercase md:text-4xl font-serif  text-white mb-6 tracking-tight  ">
+            <motion.span
+              animate={{
+                backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+              }}
+              transition={{
+                duration: 4,
+                repeat: Number.POSITIVE_INFINITY,
+                ease: 'linear',
+              }}
+              style={{
+                background:
+                  'linear-gradient(90deg, #ffffff 0%, #ffffff66 25%, #ffffff 50%, #ffffff66 75%, #ffffff 100%)',
+                backgroundSize: '200% 100%',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              Welcome Back
+            </motion.span>
           </h1>
           <p className="text-gray-50 text-sm">
             Sign in to continue to your account

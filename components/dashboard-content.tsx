@@ -24,14 +24,12 @@ import {
   Check,
   CheckCircle,
   Clock,
-  Loader2,
   MessageCircle,
   Phone,
   Plus,
   RefreshCw,
   Search,
   Sparkles,
-  Star,
   Trash2,
   TrendingUp,
   Users,
@@ -44,6 +42,7 @@ import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { ConfettiSuccessPopup } from './confetti-success-popup';
+import { AwwwardsLoading } from './ui/loading';
 // Enhanced animation variants for modern feel
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -561,30 +560,8 @@ export default function DashboardContent() {
   // Loading state with modern spinner
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{
-              duration: 2,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: 'linear',
-            }}
-            className="mb-6"
-          >
-            <Loader2 className="h-16 w-16 text-white mx-auto" />
-          </motion.div>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="text-white text-xl font-medium"
-          ></motion.p>
-        </motion.div>
+      <div className="min-h-screen flex items-center justify-center">
+        <AwwwardsLoading isLoading={true} />
       </div>
     );
   }
@@ -600,10 +577,30 @@ export default function DashboardContent() {
           className="mb-8 sm:mb-12 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6"
         >
           <div className="space-y-2">
-            <h1 className="bg-clip-text text-transparent bg-gradient-to-b from-neutral-50  to-neutral-800 font-bold tracking-tight sm:text-6xl leading-tight  glowing-text text-5xl md:text-6xl lg:text-6xl xl:text-6xl">
-              Welcome back, {user?.name}!
+            <h1 className="text-3xl uppercase md:text-6xl  text-white mb-6 tracking-tight ">
+              <motion.span
+                animate={{
+                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Number.POSITIVE_INFINITY,
+                  ease: 'linear',
+                }}
+                style={{
+                  background:
+                    'linear-gradient(90deg, #ffffff 0%, #ffffff66 25%, #ffffff 50%, #ffffff66 75%, #ffffff 100%)',
+                  backgroundSize: '200% 100%',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                {` Welcome back, ${user?.name}!`}
+              </motion.span>
             </h1>
-            <p className="text-white/60 text-lg sm:text-xl">
+
+            <p className="text-white/60  text-lg sm:text-xl">
               Track your reports and manage your activity
             </p>
           </div>
@@ -650,7 +647,6 @@ export default function DashboardContent() {
                 </motion.div>
                 <AlertDescription className="text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <Sparkles className="h-5 w-5 text-yellow-400" />
                     <span className="text-lg font-medium">
                       New reports available! Someone might have found your lost
                       item.
@@ -707,7 +703,6 @@ export default function DashboardContent() {
                   <Sparkles className="h-5 w-5 text-yellow-400" />
                 </motion.div>
                 <AlertDescription className="text-white flex items-center gap-3">
-                  <Star className="h-5 w-5 text-yellow-400" />
                   <span className="text-lg font-medium">
                     Potential matches found! Review them in the Matches tab to
                     confirm.
@@ -1062,7 +1057,6 @@ export default function DashboardContent() {
                       <Card className="bg-black border-white/20 backdrop-blur-sm shadow-xl">
                         <CardHeader>
                           <CardTitle className="text-white flex items-center gap-2">
-                            <Sparkles className="h-5 w-5 text-yellow-400" />
                             Matches
                           </CardTitle>
                           <CardDescription className="text-white/60">
@@ -1543,8 +1537,8 @@ export default function DashboardContent() {
                                               className="w-full bg-green-600 hover:bg-green-700 text-white"
                                             >
                                               {isLostUser
-                                                ? '📱 I Got My Phone Back'
-                                                : '📱 I Returned The Phone'}
+                                                ? ' I Got My Phone Back'
+                                                : ' I Returned The Phone'}
                                             </Button>
                                           </motion.div>
                                         </div>

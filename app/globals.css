@@ -51,7 +51,9 @@ body::-webkit-scrollbar {
   .bg-background {
     background-color: #0a0a0a !important;
   }
-
+  .glow-gold {
+    text-shadow: 0 0 10px #ffd70088, 0 0 20px #ffa50044;
+  }
   .bg-card {
     background-color: #0f0f0f !important;
   }
