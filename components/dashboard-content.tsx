@@ -29,7 +29,7 @@ import {
   Plus,
   RefreshCw,
   Search,
-  Sparkles,
+
   Trash2,
   TrendingUp,
   Users,
@@ -700,7 +700,7 @@ export default function DashboardContent() {
                   animate={{ rotate: [0, 10, -10, 0] }}
                   transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
                 >
-                  <Sparkles className="h-5 w-5 text-yellow-400" />
+
                 </motion.div>
                 <AlertDescription className="text-white flex items-center gap-3">
                   <span className="text-lg font-medium">
@@ -907,7 +907,7 @@ export default function DashboardContent() {
                 {
                   id: 'matches',
                   label: 'Matches',
-                  icon: Sparkles,
+
                   show: matches.length > 0,
                 },
                 {
@@ -940,7 +940,7 @@ export default function DashboardContent() {
                       }
                     `}
                   >
-                    <tab.icon className="h-4 w-4" />
+
                     <span className="truncate">{tab.label}</span>
                   </motion.button>
                 ))}
@@ -1233,7 +1233,7 @@ export default function DashboardContent() {
                                             repeat: Number.POSITIVE_INFINITY,
                                           }}
                                         >
-                                          <Sparkles className="h-6 w-6 text-yellow-400" />
+
                                         </motion.div>
                                         {isLostUser
                                           ? '📱 Found Phone Match!'

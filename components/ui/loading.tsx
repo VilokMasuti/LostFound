@@ -291,7 +291,7 @@ export function AwwwardsLoading({
                   }}
                   className="text-center"
                 >
-                  <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 tracking-tight">
+                  <h1 className="text-4xl md:text-6xl font-bold font-serif uppercase text-white mb-4 tracking-tight">
                     <motion.span
                       animate={{
                         backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
@@ -315,14 +315,14 @@ export function AwwwardsLoading({
                   </h1>
 
                   <motion.p
-                    className="text-white/70 text-lg md:text-xl font-light tracking-wide"
+                    className="text-white/70 text-lg uppercase  font-serif  md:text-xl font-light tracking-wide"
                     animate={{ opacity: [0.7, 1, 0.7] }}
                     transition={{
                       duration: 2,
                       repeat: Number.POSITIVE_INFINITY,
                     }}
                   >
-                    Crafting Digital Excellence
+                    Hare krishna
                   </motion.p>
                 </motion.div>
               )}
