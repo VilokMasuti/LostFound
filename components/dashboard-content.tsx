@@ -20,7 +20,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Activity,
   AlertTriangle,
-  Bell,
+
   Check,
   CheckCircle,
   Clock,
@@ -643,7 +643,7 @@ export default function DashboardContent() {
                   animate={{ scale: [1, 1.2, 1] }}
                   transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
                 >
-                  <Bell className="h-5 w-5 text-white" />
+
                 </motion.div>
                 <AlertDescription className="text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex items-center gap-3">
