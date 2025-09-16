@@ -12,7 +12,7 @@ export default function HomePage() {
       <HomepageLoader
         onComplete={() => setShowWebsite(true)}
         brandName="Reconnect"
-        duration={10000} // Exactly 10 seconds
+        duration={5000} // Exactly 10 seconds
       />
     );
   }
